@@ -83,12 +83,13 @@ This runs:
 3. TypeScript without emitting files
 4. Expo Doctor
 
-Current verified result on 2026-07-21:
+Current verified result on 2026-07-24:
 
 ```text
-5 test suites passed
-20 tests passed
+15 test suites passed
+211 tests passed
 20/20 Expo Doctor checks passed
+Android, iOS, and static web exports passed
 ```
 
 Export native/web bundles:

@@ -10,7 +10,8 @@
 │                                               │
 │  Challenge UI ──> Pure subnet domain engine  │
 │       │                                       │
-│       ├──> SQLite attempt outbox (planned)    │
+│       ├──> SQLite completion progress         │
+│       ├──> Detailed attempt outbox (planned)  │
 │       └──> SecureStore auth session           │
 └──────────────────────┬────────────────────────┘
                        │ HTTPS + authenticated JWT
@@ -38,8 +39,8 @@ Restricted reporting UI (later) ──> server-authorized views/functions
 Trusted for:
 
 - Immediate lesson feedback
-- Temporary/local progress presentation
-- Durable offline attempt capture
+- Local progress presentation
+- Durable local completion state on Android and iOS (automated-test-covered; physical restart verification pending)
 - Securely retaining managed auth session material
 
 Not trusted for:
@@ -79,9 +80,17 @@ Pure TypeScript subnet engine. It validates IPv4/CIDR input and derives:
 
 This module must remain free of React Native, Supabase, persistence, and UI dependencies.
 
+### `src/domain/questions/`
+
+Generates and validates the deterministic, versioned 500-question curriculum. Stable IDs and ordinals are persistence boundaries.
+
 ### `src/features/challenge/`
 
-Contains deterministic challenge definitions and the current learner interface. Answers are generated through the domain engine rather than duplicated manually.
+Contains the pure learner-session engine and active challenge interface. Answers and instructional facts are derived through the domain engine rather than duplicated manually.
+
+### `src/progress/`
+
+Defines the local progress contract, in-memory implementation, versioned Expo SQLite implementation, hydration hook, and platform-specific repository factories. Android and iOS use SQLite; web intentionally uses session-only memory.
 
 ### `src/auth/secureSessionStorage.ts`
 

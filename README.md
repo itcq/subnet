@@ -4,22 +4,34 @@ A mobile-first IPv4 subnetting mastery game.
 
 This is an independent standalone project with no external brand, LMS, or student-directory affiliation.
 
-## Current prototype
+## Current curriculum
 
-The first playable mission teaches students to find network addresses across five IPv4/CIDR challenges.
+The current build teaches network-address calculation through a deterministic, versioned catalog of 500 questions.
 
 Included:
 
-- Five guided challenges spanning `/20`, `/26`, `/27`, `/28`, and `/30`
-- Clear next-challenge progression and mission restart
+- 500 stable network-address questions generated from a fixed seed
+- Four difficulty tiers:
+  - Easy: questions 1–100
+  - Intermediate: questions 101–299
+  - Hard: questions 300–399
+  - Hardest: questions 400–500
+- Progressive hint policies for subnet masks and block sizes
+- `/31` point-to-point and `/32` host-route edge cases in the hardest tier
 - Structured four-octet mobile input
-- Immediate correct/incorrect feedback
-- Dynamic block-size and subnet-boundary explanations
-- Pure TypeScript IPv4 subnet engine
-- Unit and component tests
+- Immediate correct/incorrect feedback with mask, block-size, network, and broadcast explanations
+- Correct-answer-gated advancement and tier checkpoints
+- Final completion at question 500 without wrapping back to question 1
+- Resume at the first incomplete question
 - Expo support for Android, iOS, and web
 
-The MVP is intentionally local-first. It does not require an account or backend.
+The curriculum is local-first and does not require an account or network connection.
+
+## Progress persistence
+
+- **Android and iOS:** completed questions are stored locally in SQLite. Repository, hydration, retry, and route behavior are covered by automated tests. A physical-device restart/resume smoke test is still required before merge.
+- **Web:** progress is stored only in memory for the current browser session and is cleared when the page reloads. The app displays this limitation directly.
+- **Cloud sync:** not implemented. Local records are marked for future synchronization, but no server progress claim is made.
 
 ## Run it
 
@@ -85,11 +97,11 @@ npm run build:production
 ## Structure
 
 ```text
-src/app/                         Expo Router entry points
+src/app/                         Expo Router entry points and progress hydration
 src/domain/subnet.ts             Pure subnet calculation engine
-src/domain/__tests__/            Domain behavior tests
-src/features/challenge/          First playable challenge
-src/features/challenge/__tests__ Component interaction tests
+src/domain/questions/            Deterministic 500-question catalog
+src/features/challenge/          Session engine and active challenge UI
+src/progress/                    In-memory and SQLite progress repositories
 src/auth/                        Secure session storage
 src/lib/                         Backend client factories
 supabase/                        Local backend configuration
@@ -101,4 +113,5 @@ docs/                            Architecture, setup, and status documentation
 - Teach accuracy and reasoning before speed.
 - Explain mistakes instead of punishing them.
 - Keep practice available offline.
+- Preserve learner progress before showing completion.
 - Avoid loss-framed streaks, artificial urgency, and unnecessary student-data collection.

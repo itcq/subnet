@@ -2,16 +2,23 @@
 
 This roadmap distinguishes planned work from implemented capability. Dates are intentionally omitted until ownership, infrastructure, and release decisions are confirmed.
 
-## Milestone 0 — Verified local prototype
+## Milestone 0 — Local curriculum implementation
 
-**Status:** Complete
+**Status:** Implementation complete; physical-device restart verification pending
 
-- Pure subnet engine
-- Five guided network-address challenges
+- Pure IPv4 subnet engine
+- Deterministic, versioned catalog of 500 network-address questions
+- Easy 1–100, Intermediate 101–299, Hard 300–399, Hardest 400–500
+- Progressive mask and block-size hint policies
 - Immediate instructional feedback
-- Correct-answer-gated progression
-- Android, iOS, and web project targets
+- Correct-answer-gated progression and tier checkpoints
+- Final completion without automatic restart
+- Native SQLite completion persistence and first-incomplete resume
+- Explicit session-only web fallback
+- Android, iOS, and web exports
 - Automated quality checks
+
+**Remaining exit criterion:** On physical Android and iOS devices, complete questions, terminate and restart the app, and verify resume at the first incomplete question.
 
 ## Milestone 1 — Standalone account vertical slice
 
@@ -21,9 +28,9 @@ This roadmap distinguishes planned work from implemented capability. Dates are i
 - Secure session persistence
 - Profiles and student-role defaults
 - RLS ownership policies and abuse tests
-- SQLite attempt outbox
+- Detailed attempt outbox
 - Idempotent attempt synchronization
-- Canonical progress view
+- Canonical server progress view
 - One server-awarded badge
 
 **Exit criteria:** An invited synthetic user can complete a challenge offline, restart, reconnect, synchronize once, and see verified progress while cross-user access is denied.
@@ -40,13 +47,13 @@ This roadmap distinguishes planned work from implemented capability. Dates are i
 - Communication preference center
 - Privacy/support screens
 
-## Milestone 3 — Curriculum expansion
+## Milestone 3 — Curriculum refinement
 
 **Status:** Planned
 
-- Additional IPv4 subnetting missions
+- Difficulty calibration using learner evidence
+- Additional subnetting question types and missions
 - Adaptive practice based on demonstrated errors
-- Curriculum review and difficulty calibration
 - Accessibility and real-device usability testing
 
 Not in current scope: IPv6, VLSM, multiplayer, public leaderboards, AI tutoring, or pressure-based streak mechanics.

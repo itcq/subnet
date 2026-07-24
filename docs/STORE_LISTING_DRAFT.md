@@ -22,7 +22,8 @@ Use block size, subnet masks, and network boundaries to solve each problem. You 
 
 Current features:
 
-- Guided network-address challenges
+- A deterministic 500-question network-address curriculum
+- Four progressive difficulty tiers
 - Structured IPv4 input designed for phones
 - Immediate, process-focused feedback
 - Clear mask and block-size references
@@ -36,7 +37,7 @@ This app is designed as a practical learning companion. It does not promise cert
 2. Structured octet input on a phone
 3. Correct-answer boundary explanation
 4. Helpful retry guidance
-5. Mission progress and final restart state
+5. Tier progress and final curriculum-complete state
 
 Required device sizes and exact screenshot counts must be checked in App Store Connect and Google Play Console when the store records are created.
 

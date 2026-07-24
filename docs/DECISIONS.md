@@ -1,6 +1,6 @@
 # Project Decisions
 
-**Last updated:** 2026-07-21
+**Last updated:** 2026-07-24
 
 This log records decisions that materially constrain the implementation. Change a decision explicitly rather than allowing the code and documentation to drift.
 
@@ -34,7 +34,7 @@ Keep subnet calculations in a framework-independent TypeScript module.
 
 Connectivity and authentication failures must not destroy or block an in-progress lesson.
 
-**Consequence:** Immediate feedback runs locally; attempts are queued durably and synchronized later.
+**Consequence:** Feedback runs locally. Correct completed-question records are stored locally on native platforms before the UI marks them complete. Detailed attempt synchronization remains separate planned work.
 
 ## D-005 — Managed authentication
 
@@ -46,11 +46,11 @@ Use managed identity rather than custom password storage or cryptography. Supaba
 
 ## D-006 — Server-authoritative verified progress and badges
 
-**Status:** Accepted
+**Status:** Accepted; server implementation incomplete
 
-The client may show local practice but cannot grant authoritative progress, roles, or badges.
+The client may show local practice but cannot grant authoritative cloud progress, roles, or badges.
 
-**Consequence:** The server validates attempts, deduplicates offline retries, updates progress transactionally, and evaluates versioned badge rules.
+**Consequence:** A future server validates attempts, deduplicates offline retries, updates progress transactionally, and evaluates versioned badge rules. Current SQLite records are local completion state only.
 
 ## D-007 — Private-by-default student data
 
@@ -75,6 +75,30 @@ Do not use public leaderboards, loss-framed streaks, guilt, artificial scarcity,
 Required account/security mail, optional progress/badge mail, and marketing mail are separate categories.
 
 **Consequence:** Optional categories default off, unsubscribe/suppression is honored, and the app never exposes email-provider credentials.
+
+## D-010 — Deterministic versioned curriculum
+
+**Status:** Accepted
+
+The initial curriculum is a fixed catalog of 500 network-address questions generated from a stable seed. IDs, ordinals, answers, and catalog version are deterministic.
+
+**Consequence:** Progress references stable question identity. Catalog changes require a new version and must not silently reinterpret existing completion records.
+
+## D-011 — Four explicit difficulty tiers
+
+**Status:** Accepted
+
+The curriculum tiers are Easy 1–100, Intermediate 101–299, Hard 300–399, and Hardest 400–500. Question 300 belongs to Hard. The Hardest tier includes `/31` and `/32`.
+
+**Consequence:** Tier boundaries, hint policies, progress labels, tests, and checkpoint actions use these exact ranges.
+
+## D-012 — Platform-specific local persistence
+
+**Status:** Accepted for the current release slice
+
+Android and iOS use one versioned Expo SQLite repository instance. Web uses an in-memory repository for the active browser session.
+
+**Consequence:** Native completion is committed before the UI shows success. Load failures provide retry. Web displays that progress is cleared on reload and makes no durable-persistence claim. Physical-device restart testing remains a merge requirement.
 
 ## Open decisions
 
