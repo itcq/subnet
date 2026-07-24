@@ -1,0 +1,2 @@
+-- Deterministic development fixtures are added after the initial schema migration.
+-- Never seed production student identities or personal data.
