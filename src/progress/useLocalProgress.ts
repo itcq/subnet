@@ -16,11 +16,12 @@ export type LocalProgressState = Readonly<{
   loading: boolean;
   completedOrdinals: readonly number[];
   recordCompletion(input: LocalQuestionProgress): Promise<void>;
+  failure: ProgressFailure | null;
   error: Error | null;
   retry(): void;
 }>;
 
-type ProgressFailure = Readonly<{
+export type ProgressFailure = Readonly<{
   kind: 'load' | 'save';
   error: Error;
 }>;
@@ -199,6 +200,7 @@ export function useLocalProgress(
       ? completedOrdinals
       : EMPTY_ORDINALS,
     recordCompletion,
+    failure: hydrationIsCurrent ? failure : null,
     error: hydrationIsCurrent ? failure?.error ?? null : null,
     retry,
   };

@@ -93,6 +93,10 @@ describe('useLocalProgress', () => {
     expect(result.current.error).toEqual(
       new Error('Unable to load local progress. Please try again.'),
     );
+    expect(result.current.failure).toEqual({
+      kind: 'load',
+      error: new Error('Unable to load local progress. Please try again.'),
+    });
     expect(result.current.completedOrdinals).toEqual([]);
 
     await act(async () => result.current.retry());
