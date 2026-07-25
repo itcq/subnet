@@ -50,10 +50,12 @@ function deferred() {
 }
 
 describe('NetworkChallenge catalog session UI', () => {
-  it('uses the 500-question catalog by default without rendering every question', async () => {
-    const { getByText } = await render(<NetworkChallenge />);
+  it('starts the default catalog as a focused journey without exposing the global question total', async () => {
+    const { getByText, queryByText } = await render(<NetworkChallenge />);
 
-    expect(getByText('Question 1 of 500')).toBeTruthy();
+    expect(getByText('FOUNDATIONS · UNIT 1')).toBeTruthy();
+    expect(getByText('Lesson 1 · Challenge 1 of 5')).toBeTruthy();
+    expect(queryByText(/500/)).toBeNull();
   });
 
   it('starts at the first incomplete fixture and shows fixture, tier, and tier progress', async () => {
@@ -65,8 +67,8 @@ describe('NetworkChallenge catalog session UI', () => {
       <NetworkChallenge questions={questions} initialCompletedOrdinals={[99]} />,
     );
 
-    expect(getByText('Question 2 of 2')).toBeTruthy();
-    expect(getByText('Easy · 100 of 100')).toBeTruthy();
+    expect(getByText('FOUNDATIONS · UNIT 5')).toBeTruthy();
+    expect(getByText('Lesson 4 · Challenge 5 of 5')).toBeTruthy();
     expect(getByText('10.0.2.70 /27')).toBeTruthy();
     expect(queryByText('10.0.1.70 /27')).toBeNull();
   });
@@ -177,7 +179,7 @@ describe('NetworkChallenge catalog session UI', () => {
     });
     await fireEvent.press(view.getByRole('button', { name: 'NEXT CHALLENGE' }));
 
-    expect(view.getByText('Question 2 of 2')).toBeTruthy();
+    expect(view.getByText('Lesson 1 · Challenge 2 of 5')).toBeTruthy();
     expect(view.getByText('10.20.30.200 /26')).toBeTruthy();
     expect(view.queryByText('10.10.10.70 /27')).toBeNull();
     expect(view.getByLabelText('Answer octet 1').props.value).toBe('');
@@ -198,8 +200,36 @@ describe('NetworkChallenge catalog session UI', () => {
       await fireEvent.press(view.getByRole('button', { name: 'Check answer' }));
     });
 
-    expect(view.getByRole('button', { name: 'CONTINUE TO INTERMEDIATE' })).toBeTruthy();
-    expect(view.getByText('CONTINUE TO INTERMEDIATE')).toBeTruthy();
+    expect(view.getByRole('button', { name: 'ENTER BUILDER' })).toBeTruthy();
+    expect(view.getByText('ENTER BUILDER')).toBeTruthy();
+  });
+
+  it('marks lesson boundaries as short journey milestones', async () => {
+    const questions = [
+      question(5, '10.1.1.70', 27, 'easy'),
+      question(6, '10.1.2.70', 27, 'easy'),
+    ] as const;
+    const view = await render(<NetworkChallenge questions={questions} />);
+    await enterAnswer(view.getByLabelText, questions[0].answer);
+    await act(async () => {
+      await fireEvent.press(view.getByRole('button', { name: 'Check answer' }));
+    });
+
+    expect(view.getByRole('button', { name: 'CONTINUE TO LESSON 2' })).toBeTruthy();
+  });
+
+  it('marks balanced unit boundaries as journey milestones', async () => {
+    const questions = [
+      question(20, '10.1.1.70', 27, 'easy'),
+      question(21, '10.1.2.70', 27, 'easy'),
+    ] as const;
+    const view = await render(<NetworkChallenge questions={questions} />);
+    await enterAnswer(view.getByLabelText, questions[0].answer);
+    await act(async () => {
+      await fireEvent.press(view.getByRole('button', { name: 'Check answer' }));
+    });
+
+    expect(view.getByRole('button', { name: 'CONTINUE TO UNIT 2' })).toBeTruthy();
   });
 
   it('completes the final fixture question without wrapping or enabling another action', async () => {
@@ -215,11 +245,11 @@ describe('NetworkChallenge catalog session UI', () => {
       await fireEvent.press(view.getByRole('button', { name: 'Check answer' }));
     });
 
-    expect(view.getByText('Curriculum complete')).toBeTruthy();
+    expect(view.getByText('Journey complete')).toBeTruthy();
     expect(view.getByText('10.2.2.70 /27')).toBeTruthy();
-    const complete = view.getByRole('button', { name: 'CURRICULUM COMPLETE' });
+    const complete = view.getByRole('button', { name: 'JOURNEY COMPLETE' });
     expect(complete.props.accessibilityState).toEqual({ disabled: true });
-    expect(view.getByText('CURRICULUM COMPLETE')).toBeTruthy();
+    expect(view.getByText('JOURNEY COMPLETE')).toBeTruthy();
   });
 
   it('restores an already completed curriculum as a locked final state', async () => {
@@ -234,9 +264,9 @@ describe('NetworkChallenge catalog session UI', () => {
       />,
     );
 
-    expect(view.getByText('Curriculum complete')).toBeTruthy();
+    expect(view.getByText('Journey complete')).toBeTruthy();
     expect(
-      view.getByRole('button', { name: 'CURRICULUM COMPLETE' }).props.accessibilityState,
+      view.getByRole('button', { name: 'JOURNEY COMPLETE' }).props.accessibilityState,
     ).toEqual({ disabled: true });
     expect(view.getByLabelText('Answer octet 1').props.editable).toBe(false);
 

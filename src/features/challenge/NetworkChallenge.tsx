@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 
 import { subnetQuestionCatalog } from '@/domain/questions/catalog';
-import { getTierConfig } from '@/domain/questions/tierConfig';
+import { getJourneyPosition } from '@/domain/questions/journey';
 import type { SubnetQuestion } from '@/domain/questions/types';
 import { subnetFacts } from '@/domain/subnet';
 
@@ -28,23 +28,29 @@ export type NetworkChallengeProps = {
   readonly onQuestionCompleted?: (question: SubnetQuestion) => Promise<void> | void;
 };
 
-const TIER_NAMES = {
-  easy: 'Easy',
-  intermediate: 'Intermediate',
-  hard: 'Hard',
-  hardest: 'Hardest',
-} as const;
-
 function advanceLabel(ordinal: number): { accessibility: string; visible: string } {
   switch (ordinal) {
     case 100:
-      return { accessibility: 'CONTINUE TO INTERMEDIATE', visible: 'CONTINUE TO INTERMEDIATE' };
+      return { accessibility: 'ENTER BUILDER', visible: 'ENTER BUILDER' };
     case 299:
-      return { accessibility: 'CONTINUE TO HARD', visible: 'CONTINUE TO HARD' };
+      return { accessibility: 'ENTER ADVANCED', visible: 'ENTER ADVANCED' };
     case 399:
-      return { accessibility: 'CONTINUE TO HARDEST', visible: 'CONTINUE TO HARDEST' };
-    default:
+      return { accessibility: 'ENTER MASTERY', visible: 'ENTER MASTERY' };
+    default: {
+      const journey = getJourneyPosition(ordinal);
+      if (
+        journey.lesson === journey.lessonsInUnit &&
+        journey.challenge === journey.challengesInLesson
+      ) {
+        const label = `CONTINUE TO UNIT ${journey.unit + 1}`;
+        return { accessibility: label, visible: label };
+      }
+      if (journey.challenge === journey.challengesInLesson) {
+        const label = `CONTINUE TO LESSON ${journey.lesson + 1}`;
+        return { accessibility: label, visible: label };
+      }
       return { accessibility: 'NEXT CHALLENGE', visible: 'NEXT CHALLENGE' };
+    }
   }
 }
 
@@ -97,10 +103,7 @@ function NetworkChallengeSession({
     () => subnetFacts(question.ip, question.prefix),
     [question.ip, question.prefix],
   );
-  const tier = getTierConfig(question.ordinal);
-  const tierName = TIER_NAMES[question.tier];
-  const tierPosition = question.ordinal - tier.start + 1;
-  const tierTotal = tier.end - tier.start + 1;
+  const journey = getJourneyPosition(question.ordinal);
   const isAnswerComplete = session.answerOctets.every(Boolean);
   const revealFacts = session.feedback !== null;
   const showMask = revealFacts || question.hints.showMaskBeforeAnswer;
@@ -115,7 +118,7 @@ function NetworkChallengeSession({
     `${targetOctet} falls in the ${networkOctet}–${broadcastOctet} block of the interesting octet.`;
   const nextLabel = advanceLabel(question.ordinal);
   const actionLabel = session.curriculumComplete
-    ? { accessibility: 'CURRICULUM COMPLETE', visible: 'CURRICULUM COMPLETE' }
+    ? { accessibility: 'JOURNEY COMPLETE', visible: 'JOURNEY COMPLETE' }
     : session.feedback === 'correct'
       ? nextLabel
       : isSaving
@@ -186,20 +189,23 @@ function NetworkChallengeSession({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
         <View style={styles.progressRow}>
-          <Text style={styles.eyebrow}>{tierName.toUpperCase()} · NETWORK BOUNDARIES</Text>
-          <Text style={styles.progress}>Question {activeIndex + 1} of {questions.length}</Text>
+          <Text style={styles.eyebrow}>
+            {journey.stage.toUpperCase()} · UNIT {journey.unit}
+          </Text>
+          <Text style={styles.progress}>
+            Lesson {journey.lesson} · Challenge {journey.challenge} of {journey.challengesInLesson}
+          </Text>
         </View>
         <View style={styles.progressTrack}>
           <View
-            accessibilityLabel={`Progress ${activeIndex + 1} of ${questions.length}`}
+            accessibilityLabel={`Lesson progress ${journey.challenge} of ${journey.challengesInLesson}`}
             style={[
               styles.progressFill,
-              { width: `${((activeIndex + 1) / questions.length) * 100}%` },
+              { width: `${(journey.challenge / journey.challengesInLesson) * 100}%` },
             ]}
           />
         </View>
 
-        <Text style={styles.tierProgress}>{tierName} · {tierPosition} of {tierTotal}</Text>
         <Text style={styles.title}>Find the network.</Text>
         <Text style={styles.prompt}>What is the network address?</Text>
 
@@ -277,9 +283,9 @@ function NetworkChallengeSession({
 
         {session.curriculumComplete && (
           <View accessibilityLiveRegion="polite" style={styles.completionCard}>
-            <Text style={styles.completionTitle}>Curriculum complete</Text>
+            <Text style={styles.completionTitle}>Journey complete</Text>
             <Text style={styles.completionText}>
-              You completed every question in this curriculum.
+              You completed every stage in this subnetting journey.
             </Text>
           </View>
         )}
@@ -317,8 +323,7 @@ const styles = StyleSheet.create({
   progress: { color: '#7F91A5', fontSize: 12, fontWeight: '800' },
   progressTrack: { backgroundColor: '#162639', borderRadius: 4, height: 4, marginTop: 12 },
   progressFill: { backgroundColor: '#47E5BC', borderRadius: 4, height: 4 },
-  tierProgress: { color: '#47E5BC', fontSize: 13, fontWeight: '800', marginTop: 24 },
-  title: { color: '#F5F8FC', fontSize: 36, fontWeight: '900', letterSpacing: -1, marginTop: 8 },
+  title: { color: '#F5F8FC', fontSize: 36, fontWeight: '900', letterSpacing: -1, marginTop: 24 },
   prompt: { color: '#9BACBE', fontSize: 17, marginTop: 7 },
   targetCard: {
     backgroundColor: '#102338',
