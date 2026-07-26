@@ -10,6 +10,11 @@ The current build teaches network-address calculation through a deterministic, v
 
 Included:
 
+- An untimed staged Journey with correct-answer-gated progression
+- An optional **Learn Subnetting** hub with multiple methods, worked examples, and curated external resources
+- Optional two- and four-minute typed-answer practice
+- Hints that unlock after three incorrect timed attempts and reduce the available score only when requested
+- Session-local alpha points, personal rank bands, badges, and sharing with explicit unverified-result language
 - 500 stable network-address questions generated from a fixed seed
 - Four difficulty tiers:
   - Easy: questions 1–100
@@ -30,7 +35,8 @@ The curriculum is local-first and does not require an account or network connect
 ## Progress persistence
 
 - **Android and iOS:** completed questions are stored locally in SQLite. Repository, hydration, retry, and route behavior are covered by automated tests. A physical-device restart/resume smoke test is still required before merge.
-- **Web:** progress is stored only in memory for the current browser session and is cleared when the page reloads. The app displays this limitation directly.
+- **Web:** Journey progress and timed alpha results are stored only in memory for the current browser session and are cleared when the page reloads. The app displays this limitation directly.
+- **Timed alpha results:** points, personal rank bands, and badges are session-local and unverified on every platform. They are not a public leaderboard, credential, or competitive student ranking.
 - **Cloud sync:** not implemented. Local records are marked for future synchronization, but no server progress claim is made.
 
 ## Run it
@@ -80,6 +86,7 @@ npm run build:production
 
 ## Documentation
 
+- [`docs/ALPHA_TESTER_GUIDE.md`](docs/ALPHA_TESTER_GUIDE.md)
 - [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md)
 - [`docs/DEVELOPER_SETUP.md`](docs/DEVELOPER_SETUP.md)
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)

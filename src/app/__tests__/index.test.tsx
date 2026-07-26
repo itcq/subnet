@@ -3,6 +3,7 @@ import React from 'react';
 import { act, fireEvent, render } from '@testing-library/react-native';
 import { BackHandler } from 'react-native';
 
+import type { LocalTimedResult } from '@/domain/achievements/achievements';
 import type { SubnetQuestion } from '@/domain/questions/types';
 import type { LocalProgressRepository } from '@/progress/localProgressRepository';
 
@@ -14,6 +15,7 @@ const mockRepository: LocalProgressRepository = {
 const mockRetry = jest.fn();
 const mockRecordCompletion = jest.fn<Promise<void>, [unknown]>();
 const mockNetworkChallenge = jest.fn((_props: unknown) => null);
+const mockTimedChallenge = jest.fn((_props: unknown) => null);
 const mockBackHandlerRemove = jest.fn();
 let mockHardwareBackPress: (() => boolean | null | undefined) | undefined;
 const mockRuntime = {
@@ -45,6 +47,17 @@ jest.mock('@/features/challenge/NetworkChallenge', () => {
     NetworkChallenge: (props: unknown) => {
       mockNetworkChallenge(props);
       return ReactModule.createElement(View, { testID: 'network-challenge' });
+    },
+  };
+});
+
+jest.mock('@/features/timed/TimedChallenge', () => {
+  const ReactModule = require('react');
+  const { View } = require('react-native');
+  return {
+    TimedChallenge: (props: unknown) => {
+      mockTimedChallenge(props);
+      return ReactModule.createElement(View, { testID: 'timed-challenge' });
     },
   };
 });
@@ -85,6 +98,7 @@ describe('HomeScreen launch and menu flow', () => {
     mockRetry.mockClear();
     mockRecordCompletion.mockReset();
     mockNetworkChallenge.mockClear();
+    mockTimedChallenge.mockClear();
     mockBackHandlerRemove.mockClear();
     mockHardwareBackPress = undefined;
     jest.mocked(BackHandler.addEventListener).mockClear();
@@ -145,6 +159,9 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByText('● Foundations · Current')).toBeTruthy();
     expect(screen.getByText('🔒 Builder · Locked')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'LEARN SUBNETTING' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'PLAY TIMED MODE' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'LOCAL RANK & BADGES' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'HOW TO PLAY' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'VIEW JOURNEY' })).toBeTruthy();
     expect(screen.queryByText(/500/)).toBeNull();
@@ -169,6 +186,71 @@ describe('HomeScreen launch and menu flow', () => {
 
     await fireEvent.press(completed.getByRole('button', { name: 'Back to main menu' }));
     expect(completed.getByRole('button', { name: 'VIEW COMPLETED JOURNEY' })).toBeTruthy();
+  });
+
+  it('opens optional learning, returns to the menu, and starts untimed practice without gating the Journey', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+
+    expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
+    expect(screen.getByText(/This section is optional/)).toBeTruthy();
+    expect(screen.queryByTestId('network-challenge')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
+    expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Practice this concept' }));
+    expect(screen.getByTestId('network-challenge')).toBeTruthy();
+    expect(screen.getByText('Practice only — this does not change your Journey progress.')).toBeTruthy();
+
+    const practiceProps = mockNetworkChallenge.mock.calls.at(-1)?.[0] as {
+      initialCompletedOrdinals: readonly number[];
+      onQuestionCompleted(question: SubnetQuestion): Promise<void> | void;
+    };
+    expect(practiceProps.initialCompletedOrdinals).toEqual([]);
+    await practiceProps.onQuestionCompleted(subnetQuestionCatalog[0]);
+    expect(mockRecordCompletion).not.toHaveBeenCalled();
+  });
+
+  it('runs optional timed practice separately and shows earned local ranks and badges', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'PLAY TIMED MODE' }));
+    expect(screen.getByRole('header', { name: 'Choose Your Play Style' })).toBeTruthy();
+    expect(screen.queryByTestId('timed-challenge')).toBeNull();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'START 2-MINUTE MODE' }));
+    expect(screen.getByTestId('timed-challenge')).toBeTruthy();
+    expect(screen.queryByTestId('network-challenge')).toBeNull();
+
+    const props = mockTimedChallenge.mock.calls.at(-1)?.[0] as {
+      durationSeconds: number;
+      onCompleted: (result: LocalTimedResult) => void;
+    };
+    expect(props.durationSeconds).toBe(120);
+    await act(async () => {
+      props.onCompleted({
+        resultId: 'timed-route-result',
+        score: 700,
+        elapsedSeconds: 45,
+        failureCount: 3,
+        hintsUsed: 1,
+        timeLimitSeconds: 120,
+      });
+    });
+    expect(mockRecordCompletion).not.toHaveBeenCalled();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'LOCAL RANK & BADGES' }));
+
+    expect(screen.getByRole('header', { name: 'Local Rank & Badges' })).toBeTruthy();
+    expect(screen.getByText('700 local points')).toBeTruthy();
+    expect(screen.getByText('Persistent Solver')).toBeTruthy();
   });
 
   it('opens the challenge from the menu and returns to the menu', async () => {
@@ -273,6 +355,10 @@ describe('HomeScreen launch and menu flow', () => {
     const screen = await render(<HomeScreen />);
 
     expect(screen.getAllByText(WEB_NOTICE)).toHaveLength(1);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    expect(screen.getAllByText(WEB_NOTICE)).toHaveLength(1);
+    await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
 
     await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
     expect(screen.getAllByText(WEB_NOTICE)).toHaveLength(1);

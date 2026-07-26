@@ -81,4 +81,11 @@ Also verify:
 
 ## Dependency findings
 
-`npm audit` currently reports moderate findings in Expo's transitive tooling dependency chain. Do not use forced remediation that downgrades or breaks Expo. Reassess when compatible upstream updates are available.
+A July 26, 2026 `npm audit --omit=dev` reports 36 affected dependency paths (25 high, 11 moderate), but those paths collapse to two underlying transitive advisories:
+
+- **GHSA-mh99-v99m-4gvg (`brace-expansion`)** — denial of service when attacker-controlled brace/glob input is expanded inside a Node process. In this project it is reached through Jest/ESLint globbing and Expo fingerprint/build tooling. The alpha accepts no user-provided file or glob patterns, GitHub Pages runs no project Node process, and this package is not an application import.
+- **GHSA-w5hq-g745-h8pq (`uuid`)** — missing output-buffer bounds checks in UUID v3/v5/v6. The dependency is reached only through the Node-based `xcode` config plugin, whose installed call site uses `uuid.v4()` without a caller-provided buffer. The application does not import `uuid`.
+
+These findings are assessed as **not reachable in the static web alpha runtime**. They remain present in the build dependency tree and must be reassessed when compatible Expo updates are available and before distributing native production builds. Do not force npm's suggested Expo/Jest downgrades; they are semver-major, SDK-incompatible remediations.
+
+For each web release, export the exact reviewed tree and verify that neither advisory package is present in the emitted browser artifact. This is a scoped reachability assessment, not a claim that the dependency tree is vulnerability-free.

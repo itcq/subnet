@@ -10,16 +10,31 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import type { LocalTimedResult } from '@/domain/achievements/achievements';
 import { CATALOG_VERSION, subnetQuestionCatalog } from '@/domain/questions/catalog';
 import { getJourneyPosition, JOURNEY_STAGES, type JourneyPosition } from '@/domain/questions/journey';
+import { LocalAchievements } from '@/features/achievements/LocalAchievements';
 import { NetworkChallenge } from '@/features/challenge/NetworkChallenge';
+import { LearnSubnetting } from '@/features/learning/LearnSubnetting';
+import { TimedChallenge } from '@/features/timed/TimedChallenge';
+import { TimedModeSetup } from '@/features/timed/TimedModeSetup';
 import { createProgressRepository } from '@/progress/createProgressRepository';
 import { useLocalProgress } from '@/progress/useLocalProgress';
 
 const progressRuntime = createProgressRepository();
 const TAGLINE = 'Learn subnetting one short lesson at a time.';
 
-type Screen = 'menu' | 'challenge' | 'how-to-play' | 'journey' | 'completion';
+type Screen =
+  | 'menu'
+  | 'challenge'
+  | 'learning-practice'
+  | 'timed-setup'
+  | 'timed'
+  | 'achievements'
+  | 'learn'
+  | 'how-to-play'
+  | 'journey'
+  | 'completion';
 
 function LaunchIdentity() {
   return (
@@ -131,6 +146,8 @@ function LessonPath({ position }: { position: JourneyPosition }) {
 export default function HomeScreen() {
   const progress = useLocalProgress(progressRuntime.repository, CATALOG_VERSION);
   const [screen, setScreen] = useState<Screen>('menu');
+  const [timedResults, setTimedResults] = useState<readonly LocalTimedResult[]>([]);
+  const [timedDurationSeconds, setTimedDurationSeconds] = useState<120 | 240>(120);
   const localScreenScrollRef = useRef<ScrollView>(null);
 
   const resetLocalScroll = useCallback(() => {
@@ -232,6 +249,98 @@ export default function HomeScreen() {
               });
             }}
             questions={subnetQuestionCatalog}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (screen === 'learning-practice') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <View style={styles.challengeHeader}>
+          <BackButton onPress={() => navigateTo('learn')} />
+        </View>
+        <PersistenceNotice />
+        <Text accessibilityLiveRegion="polite" style={styles.practiceNotice}>
+          Practice only — this does not change your Journey progress.
+        </Text>
+        <View style={styles.challengeContainer}>
+          <NetworkChallenge
+            initialCompletedOrdinals={[]}
+            onQuestionCompleted={() => {}}
+            questions={subnetQuestionCatalog}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (screen === 'timed-setup') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <PersistenceNotice />
+        <View style={styles.challengeContainer}>
+          <TimedModeSetup
+            onBack={() => navigateTo('menu')}
+            onStartTimed={(durationSeconds) => {
+              setTimedDurationSeconds(durationSeconds);
+              navigateTo('timed');
+            }}
+            onStartUntimed={() => navigateTo('challenge')}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (screen === 'timed') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <View style={styles.challengeHeader}>
+          <BackButton onPress={() => navigateTo('menu')} />
+        </View>
+        <PersistenceNotice />
+        <View style={styles.challengeContainer}>
+          <TimedChallenge
+            durationSeconds={timedDurationSeconds}
+            onCompleted={(result) => {
+              setTimedResults((current) => [...current, result]);
+            }}
+            question={subnetQuestionCatalog[0]}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (screen === 'achievements') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <ScrollView
+          ref={localScreenScrollRef}
+          key="achievements"
+          contentContainerStyle={styles.infoScrollContent}
+          onContentSizeChange={resetLocalScroll}
+          testID="info-scroll">
+          <PersistenceNotice />
+          <View style={styles.infoContainer}>
+            <BackButton onPress={() => navigateTo('menu')} />
+            <LocalAchievements results={timedResults} />
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (screen === 'learn') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <PersistenceNotice />
+        <View style={styles.challengeContainer}>
+          <LearnSubnetting
+            onBack={() => navigateTo('menu')}
+            onStartPractice={() => navigateTo('learning-practice')}
           />
         </View>
       </SafeAreaView>
@@ -351,11 +460,16 @@ export default function HomeScreen() {
               onPress={() => navigateTo(nextQuestion === undefined ? 'completion' : 'challenge')}
               primary
             />
+            <MenuButton label="LEARN SUBNETTING" onPress={() => navigateTo('learn')} />
+            <MenuButton label="PLAY TIMED MODE" onPress={() => navigateTo('timed-setup')} />
+            <MenuButton label="LOCAL RANK & BADGES" onPress={() => navigateTo('achievements')} />
             <MenuButton label="HOW TO PLAY" onPress={() => navigateTo('how-to-play')} />
             <MenuButton label="VIEW JOURNEY" onPress={() => navigateTo('journey')} />
           </View>
           <StagePath nextOrdinal={nextQuestion?.ordinal} />
-          <Text style={styles.trustText}>Learn at your pace. No lives, timers, or streak penalties.</Text>
+          <Text style={styles.trustText}>
+            Learn at your pace. The Journey stays untimed, with no lives or streak penalties.
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -481,6 +595,15 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: '#E6EEF5', fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
   buttonPressed: { opacity: 0.72 },
   challengeHeader: { backgroundColor: '#0A1725', paddingHorizontal: 12, paddingVertical: 4 },
+  practiceNotice: {
+    backgroundColor: '#102338',
+    color: '#C8D4E0',
+    fontSize: 14,
+    lineHeight: 21,
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    textAlign: 'center',
+  },
   challengeContainer: { flex: 1 },
   backButton: {
     alignSelf: 'flex-start',
