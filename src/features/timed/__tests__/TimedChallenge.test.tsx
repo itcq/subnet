@@ -1,5 +1,5 @@
 import { act, fireEvent, render } from '@testing-library/react-native';
-import { AppState, type AppStateStatus } from 'react-native';
+import { AppState, StyleSheet, type AppStateStatus } from 'react-native';
 
 import { subnetFacts } from '@/domain/subnet';
 import type { SubnetQuestion } from '@/domain/questions/types';
@@ -37,6 +37,20 @@ describe('TimedChallenge', () => {
     jest.restoreAllMocks();
     Object.defineProperty(AppState, 'currentState', { configurable: true, value: null });
     jest.useRealTimers();
+  });
+
+  it('uses shrinkable WebKit-safe numeric octet inputs without focus-time auto-selection', async () => {
+    const view = await render(<TimedChallenge question={question} />);
+    const input = view.getByLabelText('Timed answer octet 1');
+    const style = StyleSheet.flatten(input.props.style) as Record<string, unknown>;
+
+    expect(input.props.inputMode).toBe('numeric');
+    expect(input.props.selectTextOnFocus).toBeFalsy();
+    expect(style.flexBasis).toBe(0);
+    expect(style.minWidth).toBe(0);
+    expect(style.color).toBe('#101820');
+    expect(style.WebkitTextFillColor).toBe('#101820');
+    expect(style.caretColor).toBe('#101820');
   });
 
   it('starts a separate typed-answer challenge with a two-minute timer and visible score', async () => {

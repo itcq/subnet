@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextStyle,
   View,
 } from 'react-native';
 
@@ -284,7 +285,6 @@ export function TimedChallenge({
                 inputMode="numeric"
                 maxLength={3}
                 onChangeText={(value) => updateOctet(index, value)}
-                selectTextOnFocus
                 style={styles.octetInput}
                 value={octet}
               />
@@ -424,18 +424,24 @@ const styles = StyleSheet.create({
   target: { color: '#F5F8FB', fontSize: 28, fontWeight: '900', lineHeight: 36, marginTop: 6 },
   hintValue: { color: '#69F0CB', fontSize: 15, fontWeight: '700', lineHeight: 23, marginTop: 8 },
   prompt: { color: '#F5F8FB', fontSize: 18, fontWeight: '800', marginTop: 22 },
-  answerRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginTop: 14 },
-  octetGroup: { alignItems: 'center', flexDirection: 'row' },
+  answerRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', marginTop: 14, width: '100%' },
+  octetGroup: { alignItems: 'center', flex: 1, flexDirection: 'row', minWidth: 0 },
   octetInput: {
     backgroundColor: '#F5F8FB',
     borderRadius: 10,
     color: '#101820',
+    flex: 1,
+    flexBasis: 0,
     fontSize: 19,
     fontWeight: '800',
     height: 54,
-    minWidth: 54,
+    minWidth: 0,
     paddingHorizontal: 5,
     textAlign: 'center',
+    ...({
+      WebkitTextFillColor: '#101820',
+      caretColor: '#101820',
+    } as unknown as TextStyle),
   },
   dot: { color: '#AFC2D3', fontSize: 24, fontWeight: '900', marginHorizontal: 3 },
   feedback: { color: '#F6C857', fontSize: 15, lineHeight: 23, marginTop: 16 },

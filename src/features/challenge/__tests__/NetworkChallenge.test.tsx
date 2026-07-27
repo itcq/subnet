@@ -1,4 +1,5 @@
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { subnetFacts } from '@/domain/subnet';
 import type { DifficultyTier, SubnetQuestion } from '@/domain/questions/types';
@@ -50,6 +51,20 @@ function deferred() {
 }
 
 describe('NetworkChallenge catalog session UI', () => {
+  it('uses shrinkable WebKit-safe numeric octet inputs without focus-time auto-selection', async () => {
+    const view = await render(<NetworkChallenge questions={easyQuestions} />);
+    const input = view.getByLabelText('Answer octet 1');
+    const style = StyleSheet.flatten(input.props.style) as Record<string, unknown>;
+
+    expect(input.props.inputMode).toBe('numeric');
+    expect(input.props.selectTextOnFocus).toBeFalsy();
+    expect(style.flexBasis).toBe(0);
+    expect(style.minWidth).toBe(0);
+    expect(style.color).toBe('#F8FAFC');
+    expect(style.WebkitTextFillColor).toBe('#F8FAFC');
+    expect(style.caretColor).toBe('#F6C857');
+  });
+
   it('starts the default catalog as a focused journey without exposing the global question total', async () => {
     const { getByText, queryByText } = await render(<NetworkChallenge />);
 

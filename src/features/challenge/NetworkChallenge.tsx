@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type TextStyle,
   View,
 } from 'react-native';
 
@@ -242,12 +243,12 @@ function NetworkChallengeSession({
                   !session.curriculumComplete &&
                   session.feedback !== 'correct'
                 }
+                inputMode="numeric"
                 keyboardType="number-pad"
                 maxLength={3}
                 onChangeText={(value) => updateOctet(index, value)}
                 placeholder="000"
                 placeholderTextColor="#506579"
-                selectTextOnFocus
                 style={styles.octetInput}
                 value={octet}
               />
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   factValue: { color: '#C8D4E0', fontSize: 14, fontVariant: ['tabular-nums'], fontWeight: '700', marginTop: 5 },
   answerLabel: { color: '#7E91A6', fontSize: 11, fontWeight: '900', letterSpacing: 1.2, marginTop: 26 },
   octetRow: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  octetGroup: { alignItems: 'center', flexDirection: 'row', flex: 1 },
+  octetGroup: { alignItems: 'center', flexDirection: 'row', flex: 1, minWidth: 0 },
   octetInput: {
     backgroundColor: '#0C1B2C',
     borderColor: '#29445F',
@@ -356,12 +357,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: '#F8FAFC',
     flex: 1,
+    flexBasis: 0,
     fontSize: 19,
     fontVariant: ['tabular-nums'],
     fontWeight: '800',
     minHeight: 56,
+    minWidth: 0,
     paddingHorizontal: 4,
     textAlign: 'center',
+    ...({
+      WebkitTextFillColor: '#F8FAFC',
+      caretColor: '#F6C857',
+    } as unknown as TextStyle),
   },
   dot: { color: '#61778B', fontSize: 24, fontWeight: '900', marginHorizontal: 4 },
   tipCard: { alignItems: 'flex-start', flexDirection: 'row', gap: 11, marginTop: 20 },
