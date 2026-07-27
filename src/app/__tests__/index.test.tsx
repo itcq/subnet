@@ -306,6 +306,30 @@ describe('HomeScreen launch and menu flow', () => {
     expect(mockHardwareBackPress?.()).toBe(false);
   });
 
+  it('closes the guided lesson before leaving Learn with Android hardware Back', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'Start guided Bits, Bytes and Octets lesson' }),
+    );
+    expect(screen.getByRole('header', { name: 'Build an IPv4 Address' })).toBeTruthy();
+
+    await act(async () => {
+      expect(mockHardwareBackPress?.()).toBe(true);
+    });
+
+    expect(screen.queryByRole('header', { name: 'Build an IPv4 Address' })).toBeNull();
+    expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'LEARN SUBNETTING' })).toBeNull();
+
+    await act(async () => {
+      expect(mockHardwareBackPress?.()).toBe(true);
+    });
+    expect(screen.getByRole('button', { name: 'LEARN SUBNETTING' })).toBeTruthy();
+  });
+
   it('roundtrips through practical How to Play instructions', async () => {
     hydrated();
     const screen = await render(<HomeScreen />);

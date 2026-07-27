@@ -2,16 +2,30 @@ import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { EXTERNAL_RESOURCE_DISCLAIMER, LEARNING_CATALOG } from '@/domain/learning/content';
+import { GuidedOctetLesson } from '@/features/learning/GuidedOctetLesson';
 
 export function LearnSubnetting({
   onBack,
+  guidedLessonOpen: controlledGuidedLessonOpen,
+  onGuidedLessonOpenChange,
   onStartPractice,
 }: {
   onBack(): void;
+  guidedLessonOpen?: boolean;
+  onGuidedLessonOpenChange?(open: boolean): void;
   onStartPractice(): void;
 }) {
   const module = LEARNING_CATALOG.modules[0];
   const [resourceError, setResourceError] = useState<string | null>(null);
+  const [localGuidedLessonOpen, setLocalGuidedLessonOpen] = useState(false);
+  const guidedLessonOpen = controlledGuidedLessonOpen ?? localGuidedLessonOpen;
+
+  function setGuidedLessonOpen(open: boolean) {
+    if (controlledGuidedLessonOpen === undefined) {
+      setLocalGuidedLessonOpen(open);
+    }
+    onGuidedLessonOpenChange?.(open);
+  }
 
   async function openResource(url: string) {
     setResourceError(null);
@@ -20,6 +34,10 @@ export function LearnSubnetting({
     } catch {
       setResourceError('That external resource could not be opened. Please try again later.');
     }
+  }
+
+  if (guidedLessonOpen) {
+    return <GuidedOctetLesson onBack={() => setGuidedLessonOpen(false)} />;
   }
 
   return (
@@ -39,6 +57,22 @@ export function LearnSubnetting({
         <Text style={styles.optionalNotice}>
           This section is optional. Learn at your pace, or return to the main menu and start the Journey whenever you are ready.
         </Text>
+
+        <View style={styles.guidedCard}>
+          <Text style={styles.eyebrow}>NEW INTERACTIVE LESSON</Text>
+          <Text style={styles.moduleTitle}>Bits, Bytes & Octets</Text>
+          <Text style={styles.bodyText}>
+            Build 192.168.1.130/26 step by step using the four octet columns, binary place values, network and host bits, the subnet mask, block size, and full address range.
+          </Text>
+          <Text style={styles.guidedMeta}>6 guided steps · Optional · No score or progress impact</Text>
+          <Pressable
+            accessibilityLabel="Start guided Bits, Bytes and Octets lesson"
+            accessibilityRole="button"
+            onPress={() => setGuidedLessonOpen(true)}
+            style={({ pressed }) => [styles.practiceButton, pressed && styles.pressed]}>
+            <Text style={styles.practiceButtonText}>START GUIDED LESSON →</Text>
+          </Pressable>
+        </View>
 
         <View style={styles.heroCard}>
           <Text style={styles.eyebrow}>START HERE</Text>
@@ -146,6 +180,16 @@ const styles = StyleSheet.create({
     marginTop: 14,
     padding: 16,
   },
+  guidedCard: {
+    backgroundColor: '#102338',
+    borderColor: '#F6C857',
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 12,
+    marginTop: 22,
+    padding: 20,
+  },
+  guidedMeta: { color: '#9FB2C5', fontSize: 13, fontWeight: '700', lineHeight: 20 },
   heroCard: {
     backgroundColor: '#0D1C2C',
     borderColor: '#27425E',

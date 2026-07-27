@@ -146,6 +146,7 @@ function LessonPath({ position }: { position: JourneyPosition }) {
 export default function HomeScreen() {
   const progress = useLocalProgress(progressRuntime.repository, CATALOG_VERSION);
   const [screen, setScreen] = useState<Screen>('menu');
+  const [guidedLessonOpen, setGuidedLessonOpen] = useState(false);
   const [timedResults, setTimedResults] = useState<readonly LocalTimedResult[]>([]);
   const [timedDurationSeconds, setTimedDurationSeconds] = useState<120 | 240>(120);
   const localScreenScrollRef = useRef<ScrollView>(null);
@@ -156,6 +157,9 @@ export default function HomeScreen() {
 
   const navigateTo = (nextScreen: Screen) => {
     resetLocalScroll();
+    if (nextScreen !== 'learn') {
+      setGuidedLessonOpen(false);
+    }
     setScreen(nextScreen);
   };
 
@@ -171,13 +175,18 @@ export default function HomeScreen() {
         return false;
       }
 
+      if (screen === 'learn' && guidedLessonOpen) {
+        setGuidedLessonOpen(false);
+        return true;
+      }
+
       resetLocalScroll();
       setScreen('menu');
       return true;
     });
 
     return () => subscription.remove();
-  }, [resetLocalScroll, screen]);
+  }, [guidedLessonOpen, resetLocalScroll, screen]);
 
   if (progress.loading) {
     return (
@@ -339,7 +348,9 @@ export default function HomeScreen() {
         <PersistenceNotice />
         <View style={styles.challengeContainer}>
           <LearnSubnetting
+            guidedLessonOpen={guidedLessonOpen}
             onBack={() => navigateTo('menu')}
+            onGuidedLessonOpenChange={setGuidedLessonOpen}
             onStartPractice={() => navigateTo('learning-practice')}
           />
         </View>

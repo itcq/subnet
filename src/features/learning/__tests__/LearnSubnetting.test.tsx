@@ -19,6 +19,24 @@ describe('LearnSubnetting', () => {
     expect(view.getAllByText(/Step [1-4]/)).toHaveLength(8);
   });
 
+  it('opens the optional guided Bits, Bytes & Octets lesson and returns to Learn', async () => {
+    const onBack = jest.fn();
+    const view = await render(<LearnSubnetting onBack={onBack} onStartPractice={jest.fn()} />);
+
+    expect(view.getByText('Bits, Bytes & Octets')).toBeTruthy();
+    expect(view.getByText(/Build 192.168.1.130\/26 step by step/)).toBeTruthy();
+
+    await fireEvent.press(view.getByRole('button', { name: 'Start guided Bits, Bytes and Octets lesson' }));
+
+    expect(view.getByRole('header', { name: 'Build an IPv4 Address' })).toBeTruthy();
+    expect(view.queryByRole('header', { name: 'Learn Subnetting' })).toBeNull();
+
+    await fireEvent.press(view.getByRole('button', { name: 'Back to Learn Subnetting' }));
+
+    expect(view.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
+    expect(onBack).not.toHaveBeenCalled();
+  });
+
   it('renders engine-validated worked examples and pressure-free practice copy', async () => {
     const view = await render(<LearnSubnetting onBack={jest.fn()} onStartPractice={jest.fn()} />);
 
