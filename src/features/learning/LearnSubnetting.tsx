@@ -17,6 +17,8 @@ export function LearnSubnetting({
 }) {
   const module = LEARNING_CATALOG.modules[0];
   const [resourceError, setResourceError] = useState<string | null>(null);
+  const [expandedMethods, setExpandedMethods] = useState<Readonly<Record<string, boolean>>>({});
+  const [expandedExamples, setExpandedExamples] = useState<Readonly<Record<string, boolean>>>({});
   const [localGuidedLessonOpen, setLocalGuidedLessonOpen] = useState(false);
   const guidedLessonOpen = controlledGuidedLessonOpen ?? localGuidedLessonOpen;
 
@@ -55,12 +57,34 @@ export function LearnSubnetting({
           Learn Subnetting
         </Text>
         <Text style={styles.optionalNotice}>
-          This section is optional. Learn at your pace, or return to the main menu and start the Journey whenever you are ready.
+          Optional and unscored. Learn at your pace, leave whenever you like, and return without losing anything.
         </Text>
+
+        <View style={styles.heroCard}>
+          <Text style={styles.eyebrow}>START HERE</Text>
+          <Text accessibilityRole="header" style={styles.moduleTitle}>Why subnetting exists</Text>
+          <Text style={styles.objective}>{module.purpose}</Text>
+          <Text style={styles.bodyText}>
+            An IP identifies one interface. The prefix tells you which network group it belongs to.
+          </Text>
+          <Text style={styles.bodyText}>{module.objective}</Text>
+        </View>
+
+        <View style={styles.pathCard}>
+          <Text accessibilityRole="header" style={styles.sectionTitleCompact}>Your learning path</Text>
+          {module.path.map((step, index) => (
+            <View key={step.id} style={styles.pathStep}>
+              <Text style={styles.pathTitle}>
+                {index + 1} · {step.title}
+              </Text>
+              <Text style={styles.pathSummary}>{step.summary}</Text>
+            </View>
+          ))}
+        </View>
 
         <View style={styles.guidedCard}>
           <Text style={styles.eyebrow}>NEW INTERACTIVE LESSON</Text>
-          <Text style={styles.moduleTitle}>Bits, Bytes & Octets</Text>
+          <Text accessibilityRole="header" style={styles.moduleTitle}>Bits, Bytes & Octets</Text>
           <Text style={styles.bodyText}>
             Build 192.168.1.130/26 step by step using the four octet columns, binary place values, network and host bits, the subnet mask, block size, and full address range.
           </Text>
@@ -74,49 +98,79 @@ export function LearnSubnetting({
           </Pressable>
         </View>
 
-        <View style={styles.heroCard}>
-          <Text style={styles.eyebrow}>START HERE</Text>
-          <Text style={styles.moduleTitle}>{module.title}</Text>
-          <Text style={styles.objective}>{module.objective}</Text>
-          {module.introduction.map((paragraph) => (
-            <Text key={paragraph} style={styles.bodyText}>
-              {paragraph}
-            </Text>
-          ))}
-        </View>
-
-        <Text style={styles.sectionTitle}>Compare two methods</Text>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>Two reliable solving methods</Text>
+        <Text style={styles.sectionIntro}>
+          Binary explains why the boundary works. Block size is the faster decimal shortcut for that same boundary.
+        </Text>
         {module.methods.map((method) => (
           <View key={method.id} style={styles.card}>
             <Text style={styles.cardTitle}>{method.name}</Text>
             <Text style={styles.bodyText}>{method.summary}</Text>
-            {method.steps.map((step, index) => (
-              <Text key={step} style={styles.stepText}>
-                Step {index + 1}: {step}
+            <Text style={styles.connectionText}>{method.connection}</Text>
+            <Pressable
+              accessibilityLabel={`${expandedMethods[method.id] ? 'Hide' : 'Show'} steps for ${method.name}`}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: Boolean(expandedMethods[method.id]) }}
+              onPress={() =>
+                setExpandedMethods((current) => ({ ...current, [method.id]: !current[method.id] }))
+              }
+              style={({ pressed }) => [styles.revealButton, pressed && styles.pressed]}>
+              <Text style={styles.revealButtonText}>
+                {expandedMethods[method.id] ? 'HIDE STEPS' : 'SHOW STEPS'}
               </Text>
-            ))}
+            </Pressable>
+            {expandedMethods[method.id]
+              ? method.steps.map((step, index) => (
+                  <Text key={step} style={styles.stepText}>
+                    Step {index + 1}: {step}
+                  </Text>
+                ))
+              : null}
           </View>
         ))}
 
-        <Text style={styles.sectionTitle}>Worked examples</Text>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>Worked examples</Text>
         {module.workedExamples.map((example) => (
           <View key={example.id} style={styles.card}>
             <Text style={styles.cardTitle}>{example.title}</Text>
             <Text style={styles.problemText}>
               {example.ip} /{example.prefix}
             </Text>
-            {example.steps.map((step) => (
-              <Text key={step} style={styles.bodyText}>
-                • {step}
+            <Text style={styles.bodyText}>{example.context}</Text>
+            <Text style={styles.changeText}>What changes: {example.whatChanges}</Text>
+            <Text style={styles.sameText}>What stays the same: {example.whatStaysSame}</Text>
+            <Pressable
+              accessibilityLabel={`${expandedExamples[example.id] ? 'Hide' : 'Show'} calculation for ${example.title}`}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: Boolean(expandedExamples[example.id]) }}
+              onPress={() =>
+                setExpandedExamples((current) => ({ ...current, [example.id]: !current[example.id] }))
+              }
+              style={({ pressed }) => [styles.revealButton, pressed && styles.pressed]}>
+              <Text style={styles.revealButtonText}>
+                {expandedExamples[example.id] ? 'HIDE CALCULATION' : 'SHOW CALCULATION'}
               </Text>
-            ))}
-            <Text style={styles.answerText}>Network address: {example.answer}</Text>
+            </Pressable>
+            {expandedExamples[example.id] ? (
+              <View accessibilityLabel={`Calculation for ${example.title}`} style={styles.calculationPanel}>
+                {example.steps.map((step) => (
+                  <Text key={step} style={styles.bodyText}>
+                    • {step}
+                  </Text>
+                ))}
+                <Text style={styles.answerText}>Network address: {example.answer}</Text>
+              </View>
+            ) : null}
           </View>
         ))}
 
         <View style={styles.practiceCard}>
-          <Text style={styles.cardTitle}>{module.practice.title}</Text>
+          <Text accessibilityRole="header" style={styles.cardTitle}>{module.practice.title}</Text>
+          <Text style={styles.practicePromise}>No timer. No score. Unlimited retries.</Text>
           <Text style={styles.bodyText}>{module.practice.description}</Text>
+          <Text style={styles.practiceIsolation}>
+            Practice here is optional and never changes Journey, Timed, rank, badge, or achievement progress.
+          </Text>
           <Pressable
             accessibilityLabel="Practice this concept"
             accessibilityRole="button"
@@ -126,7 +180,7 @@ export function LearnSubnetting({
           </Pressable>
         </View>
 
-        <Text style={styles.sectionTitle}>External learning resources</Text>
+        <Text accessibilityRole="header" style={styles.sectionTitle}>External learning resources</Text>
         <Text style={styles.resourceIntro}>
           Different educators use different explanations. Open any resource that matches how you like to learn.
         </Text>
@@ -203,6 +257,29 @@ const styles = StyleSheet.create({
   moduleTitle: { color: '#F5F8FB', fontSize: 24, fontWeight: '900', lineHeight: 31 },
   objective: { color: '#69F0CB', fontSize: 16, fontWeight: '700', lineHeight: 24 },
   sectionTitle: { color: '#F5F8FB', fontSize: 22, fontWeight: '900', lineHeight: 30, marginTop: 30 },
+  sectionIntro: { color: '#AFC2D3', fontSize: 15, lineHeight: 23, marginTop: 8 },
+  connectionText: {
+    backgroundColor: '#172C45',
+    borderLeftColor: '#8F7CFF',
+    borderLeftWidth: 3,
+    color: '#E4DFFF',
+    fontSize: 14,
+    lineHeight: 22,
+    padding: 12,
+  },
+  sectionTitleCompact: { color: '#F5F8FB', fontSize: 20, fontWeight: '900', lineHeight: 28 },
+  pathCard: {
+    backgroundColor: '#102338',
+    borderColor: '#31516F',
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 14,
+    marginTop: 18,
+    padding: 20,
+  },
+  pathStep: { borderLeftColor: '#F6C857', borderLeftWidth: 3, gap: 3, paddingLeft: 12 },
+  pathTitle: { color: '#F5F8FB', fontSize: 16, fontWeight: '800', lineHeight: 23 },
+  pathSummary: { color: '#AFC2D3', fontSize: 14, lineHeight: 21 },
   card: {
     backgroundColor: '#0D1C2C',
     borderColor: '#27425E',
@@ -215,7 +292,21 @@ const styles = StyleSheet.create({
   cardTitle: { color: '#F5F8FB', fontSize: 18, fontWeight: '800', lineHeight: 25 },
   bodyText: { color: '#D5E0EA', fontSize: 16, lineHeight: 24 },
   stepText: { color: '#C8D4E0', fontSize: 15, lineHeight: 23 },
+  revealButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    borderColor: '#7291AE',
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    minHeight: 44,
+    paddingHorizontal: 14,
+  },
+  revealButtonText: { color: '#D7E4EF', fontSize: 13, fontWeight: '900', letterSpacing: 0.4 },
   problemText: { color: '#F6C857', fontSize: 20, fontWeight: '900', lineHeight: 28 },
+  changeText: { color: '#F8DFA0', fontSize: 14, fontWeight: '700', lineHeight: 22 },
+  sameText: { color: '#BFEFE2', fontSize: 14, fontWeight: '700', lineHeight: 22 },
+  calculationPanel: { gap: 8 },
   answerText: {
     backgroundColor: '#173A43',
     borderRadius: 10,
@@ -235,6 +326,8 @@ const styles = StyleSheet.create({
     marginTop: 28,
     padding: 20,
   },
+  practicePromise: { color: '#D9FFF5', fontSize: 17, fontWeight: '900', lineHeight: 24 },
+  practiceIsolation: { color: '#9FB2C5', fontSize: 13, lineHeight: 20 },
   practiceButton: {
     alignItems: 'center',
     backgroundColor: '#F6C857',

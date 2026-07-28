@@ -196,7 +196,7 @@ describe('HomeScreen launch and menu flow', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
 
     expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
-    expect(screen.getByText(/This section is optional/)).toBeTruthy();
+    expect(screen.getByText(/Optional and unscored/)).toBeTruthy();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));

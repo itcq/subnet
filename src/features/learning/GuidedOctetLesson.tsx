@@ -11,51 +11,25 @@ import {
   View,
 } from 'react-native';
 
-import { subnetFacts } from '@/domain/subnet';
+import { BINARY_PLACES, createGuidedLessonModel } from './guidedLessonModel';
+import { AddressRoleBoard } from './visuals/AddressRoleBoard';
+import { BlockRangeBoard } from './visuals/BlockRangeBoard';
+import { LearningPathStrip } from './visuals/LearningPathStrip';
+import { OctetBinaryBoard } from './visuals/OctetBinaryBoard';
+import { PrefixMaskBoard } from './visuals/PrefixMaskBoard';
+import { WhiteboardFrame } from './visuals/WhiteboardFrame';
+
+export { createGuidedLessonModel } from './guidedLessonModel';
 
 const TARGET_ADDRESS = '192.168.1.130';
 const TARGET_PREFIX = 26;
-const BINARY_PLACES = [128, 64, 32, 16, 8, 4, 2, 1] as const;
-
-export function createGuidedLessonModel(address: string, prefix: number) {
-  const facts = subnetFacts(address, prefix);
-  const targetOctets = address.split('.').map(Number);
-  const maskOctets = facts.mask.split('.').map(Number);
-  const networkBitsInFinalOctet = Math.max(0, Math.min(8, prefix - 24));
-  const targetOctet = targetOctets[3];
-  const maskOctet = maskOctets[3];
-  const blockStart = Number(facts.network.split('.')[3]);
-  const blockEnd = Number(facts.broadcast.split('.')[3]);
-
-  return {
-    address,
-    prefix,
-    facts,
-    targetOctets: targetOctets.map(String),
-    targetOctet,
-    targetPlaces: BINARY_PLACES.filter((place) => (targetOctet & place) !== 0),
-    networkBitsInFinalOctet,
-    hostBitsInFinalOctet: 8 - networkBitsInFinalOctet,
-    maskOctet,
-    maskPlaces: BINARY_PLACES.filter((place) => (maskOctet & place) !== 0),
-    maskBinary: maskOctets.map((octet) => octet.toString(2).padStart(8, '0')).join('.'),
-    blockSize: facts.blockSize,
-    blockStart,
-    blockEnd,
-    boundaries: Array.from({ length: 256 / facts.blockSize }, (_, index) => index * facts.blockSize),
-  };
-}
-
 const LESSON_MODEL = createGuidedLessonModel(TARGET_ADDRESS, TARGET_PREFIX);
 const LESSON_FACTS = LESSON_MODEL.facts;
 const TARGET_OCTETS = LESSON_MODEL.targetOctets;
-const ADDRESS_BLOCKS = Array.from(
-  { length: 256 / LESSON_MODEL.blockSize },
-  (_, index) => ({
-    start: index * LESSON_MODEL.blockSize,
-    end: (index + 1) * LESSON_MODEL.blockSize - 1,
-  }),
-);
+const ADDRESS_BLOCKS = LESSON_MODEL.addressBlocks;
+const NETWORK_BITS_BEFORE_FINAL_OCTET =
+  LESSON_MODEL.networkBits - LESSON_MODEL.networkBitsInFinalOctet;
+const LEARNING_PATH = ['Address + prefix', 'Bit boundary', 'Mask', 'Block', 'Range'] as const;
 
 type GuidedOctetLessonProps = {
   onBack: () => void;
@@ -137,6 +111,12 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
         </Pressable>
 
         <Text style={styles.stepLabel}>Step {step} of 6</Text>
+        <View style={styles.pathStripCard}>
+          <LearningPathStrip
+            currentStep={step === 1 ? 1 : step === 2 || step === 3 ? 2 : step - 1}
+            steps={LEARNING_PATH}
+          />
+        </View>
 
         {step === 1 ? (
           <>
@@ -144,7 +124,13 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               Build an IPv4 Address
             </Text>
             <Text style={styles.body}>
-              IPv4 addresses have four number columns. Each column is an octet: eight bits with a decimal value from 0 through 255.
+              Goal: find the subnet that contains {LESSON_MODEL.address}, then explain why its address range is correct.
+            </Text>
+            <Text style={styles.body}>
+              {LESSON_MODEL.address} is an address on one device interface. It helps us locate the device, but it is not the subnet itself.
+            </Text>
+            <Text style={styles.body}>
+              /{LESSON_MODEL.prefix} means the first {LESSON_MODEL.networkBits} of IPv4’s 32 bits identify the shared network. IPv4 has 32 bits, grouped into four 8-bit octets.
             </Text>
             <View style={styles.lessonCard}>
               <Text style={styles.cardLabel}>TYPE THIS ADDRESS</Text>
@@ -191,7 +177,7 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               Count the Bits
             </Text>
             <Text style={styles.body}>
-              One octet is one byte: eight bits. Turn on the place values that add up to the final octet, {LESSON_MODEL.targetOctet}.
+              The first three octets already account for {NETWORK_BITS_BEFORE_FINAL_OCTET} bits. Because /{LESSON_MODEL.prefix} extends beyond those octets, the boundary lands inside the last octet. That is why we zoom in on octet four, {LESSON_MODEL.targetOctet}.
             </Text>
             <View accessibilityLabel="Binary place values for one octet" style={styles.lessonCard}>
               <Text style={styles.cardLabel}>BINARY PLACE VALUES</Text>
@@ -218,10 +204,31 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               </View>
               <Text accessibilityLiveRegion="polite" style={styles.binaryReadout}>Binary: {binaryValue}</Text>
               <Text accessibilityLiveRegion="polite" style={styles.binaryTotal}>Decimal total: {binaryTotal}</Text>
-              <Text style={styles.helper}>
-                {LESSON_MODEL.targetOctet} = {LESSON_MODEL.targetPlaces.join(' + ')}, so only those bit positions are on.
-              </Text>
+              {binaryTotal === LESSON_MODEL.targetOctet ? (
+                <>
+                  <Text style={styles.formula}>{LESSON_MODEL.targetOctet} = {LESSON_MODEL.targetPlaces.join(' + ')}</Text>
+                  <Text style={styles.helper}>
+                    {LESSON_MODEL.targetBinary} has only the {LESSON_MODEL.targetPlaces.join(' and ')} places on. Next, we will place the /{LESSON_MODEL.prefix} boundary across this same binary octet.
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.helper}>Turn on the place values whose decimal total equals {LESSON_MODEL.targetOctet}.</Text>
+              )}
             </View>
+            {binaryTotal === LESSON_MODEL.targetOctet ? (
+              <WhiteboardFrame
+                summary="The fourth octet is eight binary places. The active 128 and 2 places make decimal 130."
+                title="See what octet four stores">
+                <OctetBinaryBoard
+                  activeOctetIndex={3}
+                  activePlaces={LESSON_MODEL.targetPlaces}
+                  binary={LESSON_MODEL.targetBinary}
+                  decimalValue={LESSON_MODEL.targetOctet}
+                  octets={LESSON_MODEL.targetOctets}
+                  placeValues={BINARY_PLACES}
+                />
+              </WhiteboardFrame>
+            ) : null}
             <Pressable
               accessibilityLabel="Continue to network and host bits"
               accessibilityRole="button"
@@ -242,11 +249,12 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               Count Network and Host Bits
             </Text>
             <Text style={styles.body}>
-              A /26 prefix assigns 26 of the address’s 32 bits to the network. The rest identify hosts inside that network.
+              Network bits identify the shared subnet—the part every address in this group has in common. Host bits identify addresses inside that subnet.
             </Text>
             <View style={styles.lessonCard}>
-              <Text style={styles.cardLabel}>FOLLOW THE /26 PREFIX</Text>
-              <Text style={styles.prefixSummary}>24 network bits fill the first three octets.</Text>
+              <Text style={styles.cardLabel}>FOLLOW THE /{LESSON_MODEL.prefix} PREFIX</Text>
+              <Text style={styles.prefixSummary}>{NETWORK_BITS_BEFORE_FINAL_OCTET} network bits fill the first three octets.</Text>
+
               <View accessibilityLabel="Network bits by octet" style={styles.octetBitRow}>
                 <Text style={styles.fullNetworkOctet}>8 network</Text>
                 <Text style={styles.fullNetworkOctet}>8 network</Text>
@@ -255,7 +263,7 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               </View>
               <Text style={styles.question}>How many network bits continue into octet 4?</Text>
               <View style={styles.choiceRow}>
-                {[1, 2, 6].map((count) => (
+                {LESSON_MODEL.networkBitChoices.map((count) => (
                   <Pressable
                     key={count}
                     accessibilityLabel={`Choose ${count} network bit${count === 1 ? '' : 's'} in octet 4`}
@@ -277,12 +285,13 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
                 </Text>
               ) : selectedNetworkBits !== null && selectedNetworkBits !== LESSON_MODEL.networkBitsInFinalOctet ? (
                 <Text accessibilityLiveRegion="polite" style={styles.correction}>
-                  Not quite. Subtract the first 24 network bits from {TARGET_PREFIX}.
+                  Not quite. Subtract the first {NETWORK_BITS_BEFORE_FINAL_OCTET} network bits from {LESSON_MODEL.prefix}.
                 </Text>
               ) : null}
               {selectedNetworkBits === LESSON_MODEL.networkBitsInFinalOctet ? (
                 <View accessibilityLiveRegion="polite" style={styles.successPanel}>
-                  <Text style={styles.successTitle}>{TARGET_PREFIX} network bits · {32 - TARGET_PREFIX} host bits</Text>
+                  <Text style={styles.formula}>{NETWORK_BITS_BEFORE_FINAL_OCTET} + {LESSON_MODEL.networkBitsInFinalOctet} = {LESSON_MODEL.prefix} network bits</Text>
+                  <Text style={styles.successTitle}>{LESSON_MODEL.networkBits} network bits · {LESSON_MODEL.hostBits} host bits</Text>
                   <Text style={styles.bitSplit}>{'N'.repeat(LESSON_MODEL.networkBitsInFinalOctet)}{'H'.repeat(LESSON_MODEL.hostBitsInFinalOctet)}</Text>
                   <Text style={styles.helper}>N means network. H means host. {LESSON_MODEL.networkBitsInFinalOctet} plus {LESSON_MODEL.hostBitsInFinalOctet} fills the fourth octet’s eight bits.</Text>
                 </View>
@@ -308,14 +317,17 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               Build the Subnet Mask
             </Text>
             <Text style={styles.body}>
-              Network bits become 1s in the subnet mask. Host bits become 0s.
+              A subnet mask is a measuring guide, not another device address. It records the exact same boundary you just placed.
+            </Text>
+            <Text style={styles.body}>
+              A mask 1 marks a network position; a mask 0 marks a host position.
             </Text>
             <View style={styles.lessonCard}>
               <Text style={styles.cardLabel}>BINARY SUBNET MASK</Text>
               <Text style={styles.maskBinary}>{LESSON_MODEL.maskBinary}</Text>
               <Text style={styles.question}>What decimal value is {LESSON_MODEL.maskBinary.split('.')[3]}?</Text>
               <View style={styles.choiceRow}>
-                {[128, 192, 224].map((value) => (
+                {LESSON_MODEL.maskOctetChoices.map((value) => (
                   <Pressable
                     key={value}
                     accessibilityLabel={`Choose mask octet ${value}`}
@@ -333,16 +345,35 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               </View>
               {selectedMaskOctet !== null && selectedMaskOctet !== LESSON_MODEL.maskOctet ? (
                 <Text accessibilityLiveRegion="polite" style={styles.correction}>
-                  Not quite. Add the active place values: {LESSON_MODEL.maskPlaces.join(' + ')}.
+                  {selectedMaskOctet < LESSON_MODEL.maskOctet
+                    ? 'Not quite. That value is too low. Add every place marked 1 in the final mask octet.'
+                    : 'Not quite. That value is too high. Count only the leading 1s before the host-bit zeros.'}
                 </Text>
               ) : null}
               {selectedMaskOctet === LESSON_MODEL.maskOctet ? (
                 <View accessibilityLiveRegion="polite" style={styles.successPanel}>
+                  <Text style={styles.formula}>{LESSON_MODEL.maskBinary.split('.')[3]} = {LESSON_MODEL.maskPlaces.join(' + ')} = {LESSON_MODEL.maskOctet}</Text>
                   <Text style={styles.successTitle}>Subnet mask: {LESSON_FACTS.mask}</Text>
+                  <Text style={styles.prefixSummary}>/{LESSON_MODEL.prefix} = {LESSON_FACTS.mask}</Text>
                   <Text style={styles.helper}>The first three octets are all network bits, so each becomes 255. The final mask octet is {LESSON_MODEL.maskPlaces.join(' + ')} = {LESSON_MODEL.maskOctet}.</Text>
                 </View>
               ) : null}
             </View>
+            {selectedMaskOctet === LESSON_MODEL.maskOctet ? (
+              <WhiteboardFrame
+                summary={`A /${LESSON_MODEL.prefix} boundary becomes ${LESSON_FACTS.mask}: network positions are marked N and host positions are marked H.`}
+                title={`Turn /${LESSON_MODEL.prefix} into a subnet mask`}>
+                <PrefixMaskBoard
+                  hostBits={LESSON_MODEL.hostBits}
+                  mask={LESSON_FACTS.mask}
+                  maskBinary={LESSON_MODEL.maskBinary}
+                  networkBits={LESSON_MODEL.networkBits}
+                  octetPatterns={['NNNNNNNN', 'NNNNNNNN', 'NNNNNNNN', LESSON_MODEL.prefixSplit]}
+                  prefix={LESSON_MODEL.prefix}
+                  totalBits={32}
+                />
+              </WhiteboardFrame>
+            ) : null}
             <Pressable
               accessibilityLabel="Continue to block size"
               accessibilityRole="button"
@@ -363,10 +394,14 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               Find the Address Block
             </Text>
             <Text style={styles.body}>
-              Subtract the final mask octet from 256 to find the size of each fourth-octet block.
+              {LESSON_MODEL.hostBits} host bits can make {LESSON_MODEL.totalPatternsProof} total patterns.
+            </Text>
+            <Text style={styles.body}>
+              So each subnet has {LESSON_MODEL.blockSize} total addresses before we subtract any reserved roles.
             </Text>
             <View style={styles.lessonCard}>
               <Text style={styles.cardLabel}>BLOCK SIZE</Text>
+              <Text style={styles.helper}>Decimal shortcut: 256 − {LESSON_MODEL.maskOctet} = {LESSON_MODEL.blockSize}. This is a faster way to get the same block size proven by the host bits.</Text>
               <Text style={styles.formula}>256 − {LESSON_MODEL.maskOctet} = {LESSON_MODEL.blockSize}</Text>
               <Text style={styles.helper}>Start at 0 and count by {LESSON_MODEL.blockSize}: {LESSON_MODEL.boundaries.join(', ')}.</Text>
               <Text style={styles.question}>Which fourth-octet block contains {LESSON_MODEL.targetOctet}?</Text>
@@ -388,9 +423,12 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
                 ))}
               </View>
               {selectedBlockStart === LESSON_MODEL.blockStart ? (
-                <Text accessibilityLiveRegion="polite" style={styles.correctFeedback}>
-                  Correct. {LESSON_MODEL.targetOctet} falls between {LESSON_MODEL.blockStart} and {LESSON_MODEL.blockEnd}.
-                </Text>
+                <View accessibilityLiveRegion="polite">
+                  <Text style={styles.helper}>{LESSON_MODEL.targetBinary} fits {LESSON_MODEL.blockBinaryPattern}: its fixed {LESSON_MODEL.blockBinaryPattern.slice(0, LESSON_MODEL.networkBitsInFinalOctet)} selects decimal block {LESSON_MODEL.blockRangeText}. The x positions are the host bits that may change.</Text>
+                  <Text style={styles.correctFeedback}>
+                    Correct. {LESSON_MODEL.targetOctet} falls between {LESSON_MODEL.blockStart} and {LESSON_MODEL.blockEnd}.
+                  </Text>
+                </View>
               ) : selectedBlock !== undefined ? (
                 <Text accessibilityLiveRegion="polite" style={styles.correction}>
                   {LESSON_MODEL.targetOctet > selectedBlock.end
@@ -399,6 +437,18 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
                 </Text>
               ) : null}
             </View>
+            {selectedBlockStart === LESSON_MODEL.blockStart ? (
+              <WhiteboardFrame
+                summary={`${LESSON_MODEL.targetOctet} is inside the ${LESSON_MODEL.blockRangeText} block. The next boundary starts the next subnet.`}
+                title={`Find the block that contains ${LESSON_MODEL.targetOctet}`}>
+                <BlockRangeBoard
+                  blockSize={LESSON_MODEL.blockSize}
+                  blocks={LESSON_MODEL.addressBlocks}
+                  focusValue={LESSON_MODEL.targetOctet}
+                  selectedStart={LESSON_MODEL.blockStart}
+                />
+              </WhiteboardFrame>
+            ) : null}
             <Pressable
               accessibilityLabel="Continue to full address range"
               accessibilityRole="button"
@@ -419,10 +469,25 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               Read the Subnet Range
             </Text>
             <Text style={styles.body}>
-              The first address names the network. The last is the broadcast. Hosts use the addresses between them.
+              Now give each edge of the block a job. All host bits zero means network. All host bits one means broadcast. Addresses between them are traditionally usable for hosts.
             </Text>
+            <WhiteboardFrame
+              summary="The first and last addresses have reserved roles. The addresses between them form the traditional usable host range."
+              title="Assign each address a role">
+              <AddressRoleBoard
+                broadcast={LESSON_FACTS.broadcast}
+                firstUsable={LESSON_FACTS.firstHost}
+                givenAddress={LESSON_MODEL.address}
+                lastUsable={LESSON_FACTS.lastHost}
+                network={LESSON_FACTS.network}
+                totalAddresses={LESSON_FACTS.totalAddresses}
+                usableHosts={LESSON_FACTS.usableHosts}
+              />
+            </WhiteboardFrame>
             <View style={styles.lessonCard}>
-              <Text style={styles.cardLabel}>{TARGET_ADDRESS}/{TARGET_PREFIX}</Text>
+              <Text style={styles.cardLabel}>{LESSON_MODEL.address}/{LESSON_MODEL.prefix}</Text>
+              <Text style={styles.helper}>{LESSON_MODEL.networkHostProof}</Text>
+              <Text style={styles.helper}>{LESSON_MODEL.broadcastHostProof}</Text>
               <Text style={styles.rangeLine}>Network address: {LESSON_FACTS.network}</Text>
               <Text style={styles.rangeLine}>First usable: {LESSON_FACTS.firstHost}</Text>
               <Text style={styles.rangeLine}>Last usable: {LESSON_FACTS.lastHost}</Text>
@@ -461,6 +526,14 @@ const styles = StyleSheet.create({
   backText: { color: '#D7E4EF', fontSize: 15, fontWeight: '700' },
   pressed: { opacity: 0.72 },
   stepLabel: { color: '#69F0CB', fontSize: 12, fontWeight: '900', letterSpacing: 1.1, marginTop: 24 },
+  pathStripCard: {
+    backgroundColor: '#FFFAF0',
+    borderColor: '#D8C9A7',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 10,
+    paddingHorizontal: 12,
+  },
   title: { color: '#F5F8FB', fontSize: 30, fontWeight: '900', lineHeight: 38, marginTop: 8 },
   body: { color: '#C8D4E0', fontSize: 16, lineHeight: 24, marginTop: 12 },
   lessonCard: {
@@ -473,8 +546,8 @@ const styles = StyleSheet.create({
   },
   cardLabel: { color: '#7FA0BC', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   target: { color: '#F6C857', fontSize: 24, fontVariant: ['tabular-nums'], fontWeight: '900', marginTop: 8 },
-  octetRow: { flexDirection: 'row', marginTop: 18, width: '100%' },
-  octetGroup: { alignItems: 'center', flexBasis: 0, flexDirection: 'row', flexGrow: 1, minWidth: 0 },
+  octetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18, width: '100%' },
+  octetGroup: { alignItems: 'center', flexBasis: 128, flexDirection: 'row', flexGrow: 1, minWidth: 128 },
   octetInput: {
     backgroundColor: '#091827',
     borderColor: '#31516F',
@@ -487,7 +560,7 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     fontWeight: '800',
     minHeight: 52,
-    minWidth: 0,
+    minWidth: 64,
     paddingHorizontal: 4,
     textAlign: 'center',
     WebkitTextFillColor: '#FFFFFF',

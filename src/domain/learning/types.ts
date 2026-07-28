@@ -2,6 +2,7 @@ export type LearningMethod = Readonly<{
   id: string;
   name: string;
   summary: string;
+  connection: string;
   steps: readonly string[];
 }>;
 
@@ -11,6 +12,9 @@ export type WorkedSubnetExample = Readonly<{
   ip: string;
   prefix: number;
   answer: string;
+  context: string;
+  whatChanges: string;
+  whatStaysSame: string;
   steps: readonly string[];
 }>;
 
@@ -24,9 +28,17 @@ export type LearningResource = Readonly<{
   sourceCheckedAt: string;
 }>;
 
+export type LearningPathStep = Readonly<{
+  id: string;
+  title: string;
+  summary: string;
+}>;
+
 export type LearningModule = Readonly<{
   id: string;
   title: string;
+  purpose: string;
+  path: readonly LearningPathStep[];
   objective: string;
   introduction: readonly string[];
   methods: readonly LearningMethod[];

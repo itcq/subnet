@@ -7,19 +7,55 @@ import {
 } from '../content';
 
 describe('learning content catalog', () => {
-  it('ships a stable optional first module with multiple teaching methods', () => {
-    expect(LEARNING_CATALOG.version).toBe('subnet-learning-v1');
+  it('ships a versioned beginner path that starts with why subnetting exists', () => {
+    expect(LEARNING_CATALOG.version).toBe('subnet-learning-v2');
     expect(LEARNING_CATALOG.modules).toHaveLength(1);
 
     const module = LEARNING_CATALOG.modules[0];
     expect(module.id).toBe('find-network-address');
     expect(module.title).toBe('Find the Network Address');
+    expect(module.purpose).toBe(
+      'Subnetting splits one network into smaller address groups so devices and traffic are easier to organize.',
+    );
+    expect(module.path.map(({ id }) => id)).toEqual([
+      'why-subnetting',
+      'guided-lesson',
+      'solving-methods',
+      'worked-examples',
+      'practice',
+      'resources',
+    ]);
+    expect(module.path.every(({ title, summary }) => title.trim() && summary.trim())).toBe(true);
     expect(module.methods.map(({ id }) => id)).toEqual(['block-size', 'binary-boundary']);
     expect(module.workedExamples).toHaveLength(3);
     expect(module.practice.description).toContain('does not affect Journey progress');
     expect(module).not.toHaveProperty('required');
     expect(module).not.toHaveProperty('prerequisite');
     expect(module).not.toHaveProperty('unlocks');
+  });
+
+  it('connects each solving method to the same subnet boundary', () => {
+    const methods = LEARNING_CATALOG.modules[0].methods;
+
+    expect(methods.map(({ connection }) => connection)).toEqual([
+      'Block size is the decimal width of the same host-bit patterns that binary shows.',
+      'Binary shows the boundary directly; that boundary creates the block size used by the shortcut.',
+    ]);
+  });
+
+  it('explains the context, change, and constant in every worked example', () => {
+    const examples = LEARNING_CATALOG.modules[0].workedExamples;
+
+    for (const example of examples) {
+      expect(example.context.trim().length).toBeGreaterThan(10);
+      expect(example.whatChanges.trim().length).toBeGreaterThan(10);
+      expect(example.whatStaysSame.trim().length).toBeGreaterThan(10);
+    }
+    expect(examples.map(({ whatChanges }) => whatChanges)).toEqual([
+      'With /24, all eight bits in the final octet are host bits.',
+      'With /27, only five host bits remain, so each block contains 32 addresses.',
+      'With /26, six host bits remain, so each block contains 64 addresses.',
+    ]);
   });
 
   it('keeps every worked answer aligned with the subnet engine', () => {
@@ -80,6 +116,73 @@ describe('learning content catalog', () => {
     expect(Object.isFrozen(module.workedExamples)).toBe(true);
     expect(Object.isFrozen(module.workedExamples[0].steps)).toBe(true);
     expect(Object.isFrozen(module.resources)).toBe(true);
+  });
+
+  it('rejects blank required instructional fields', () => {
+    const module = LEARNING_CATALOG.modules[0];
+    const invalidCatalogs = [
+      { ...LEARNING_CATALOG, modules: [{ ...module, purpose: '   ' }] },
+      {
+        ...LEARNING_CATALOG,
+        modules: [{ ...module, path: [{ ...module.path[0], summary: '' }, ...module.path.slice(1)] }],
+      },
+      {
+        ...LEARNING_CATALOG,
+        modules: [{ ...module, methods: [{ ...module.methods[0], connection: '' }, module.methods[1]] }],
+      },
+      {
+        ...LEARNING_CATALOG,
+        modules: [
+          {
+            ...module,
+            workedExamples: [
+              { ...module.workedExamples[0], whatStaysSame: '' },
+              ...module.workedExamples.slice(1),
+            ],
+          },
+        ],
+      },
+    ];
+
+    for (const catalog of invalidCatalogs) {
+      expect(() => validateLearningCatalog(catalog)).toThrow(
+        'Required learning instructional fields must be non-empty strings',
+      );
+    }
+  });
+
+  it('rejects empty required instructional collections', () => {
+    const module = LEARNING_CATALOG.modules[0];
+    const invalidCatalogs = [
+      { ...LEARNING_CATALOG, modules: [{ ...module, path: [] }] },
+      { ...LEARNING_CATALOG, modules: [{ ...module, introduction: [] }] },
+      { ...LEARNING_CATALOG, modules: [{ ...module, methods: [] }] },
+      { ...LEARNING_CATALOG, modules: [{ ...module, workedExamples: [] }] },
+      { ...LEARNING_CATALOG, modules: [{ ...module, resources: [] }] },
+      {
+        ...LEARNING_CATALOG,
+        modules: [{ ...module, resources: null as unknown as typeof module.resources }],
+      },
+      {
+        ...LEARNING_CATALOG,
+        modules: [{ ...module, methods: [{ ...module.methods[0], steps: [] }, module.methods[1]] }],
+      },
+      {
+        ...LEARNING_CATALOG,
+        modules: [
+          {
+            ...module,
+            workedExamples: [{ ...module.workedExamples[0], steps: [] }, ...module.workedExamples.slice(1)],
+          },
+        ],
+      },
+    ];
+
+    for (const catalog of invalidCatalogs) {
+      expect(() => validateLearningCatalog(catalog)).toThrow(
+        'Required learning instructional collections must not be empty',
+      );
+    }
   });
 
   it('rejects duplicate ids and malformed external resource URLs', () => {
