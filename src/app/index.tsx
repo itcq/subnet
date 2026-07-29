@@ -15,6 +15,7 @@ import { CATALOG_VERSION, subnetQuestionCatalog } from '@/domain/questions/catal
 import { getJourneyPosition, JOURNEY_STAGES, type JourneyPosition } from '@/domain/questions/journey';
 import { LocalAchievements } from '@/features/achievements/LocalAchievements';
 import { NetworkChallenge } from '@/features/challenge/NetworkChallenge';
+import { GuidedPractice } from '@/features/learning/GuidedPractice';
 import { LearnSubnetting } from '@/features/learning/LearnSubnetting';
 import { TimedChallenge } from '@/features/timed/TimedChallenge';
 import { TimedModeSetup } from '@/features/timed/TimedModeSetup';
@@ -180,6 +181,12 @@ export default function HomeScreen() {
         return true;
       }
 
+      if (screen === 'learning-practice') {
+        resetLocalScroll();
+        setScreen('learn');
+        return true;
+      }
+
       resetLocalScroll();
       setScreen('menu');
       return true;
@@ -267,20 +274,7 @@ export default function HomeScreen() {
   if (screen === 'learning-practice') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <View style={styles.challengeHeader}>
-          <BackButton onPress={() => navigateTo('learn')} />
-        </View>
-        <PersistenceNotice />
-        <Text accessibilityLiveRegion="polite" style={styles.practiceNotice}>
-          Practice only — this does not change your Journey progress.
-        </Text>
-        <View style={styles.challengeContainer}>
-          <NetworkChallenge
-            initialCompletedOrdinals={[]}
-            onQuestionCompleted={() => {}}
-            questions={subnetQuestionCatalog}
-          />
-        </View>
+        <GuidedPractice onBack={() => navigateTo('learn')} />
       </SafeAreaView>
     );
   }
@@ -606,15 +600,6 @@ const styles = StyleSheet.create({
   secondaryButtonText: { color: '#E6EEF5', fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
   buttonPressed: { opacity: 0.72 },
   challengeHeader: { backgroundColor: '#0A1725', paddingHorizontal: 12, paddingVertical: 4 },
-  practiceNotice: {
-    backgroundColor: '#102338',
-    color: '#C8D4E0',
-    fontSize: 14,
-    lineHeight: 21,
-    paddingHorizontal: 22,
-    paddingVertical: 10,
-    textAlign: 'center',
-  },
   challengeContainer: { flex: 1 },
   backButton: {
     alignSelf: 'flex-start',

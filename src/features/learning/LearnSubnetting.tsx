@@ -168,15 +168,18 @@ export function LearnSubnetting({
           <Text accessibilityRole="header" style={styles.cardTitle}>{module.practice.title}</Text>
           <Text style={styles.practicePromise}>No timer. No score. Unlimited retries.</Text>
           <Text style={styles.bodyText}>{module.practice.description}</Text>
+          <Text style={styles.practiceTransfer}>
+            Four examples gradually remove the hints so you can prove the method transfers.
+          </Text>
           <Text style={styles.practiceIsolation}>
             Practice here is optional and never changes Journey, Timed, rank, badge, or achievement progress.
           </Text>
           <Pressable
-            accessibilityLabel="Practice this concept"
+            accessibilityLabel="Start guided practice"
             accessibilityRole="button"
             onPress={onStartPractice}
             style={({ pressed }) => [styles.practiceButton, pressed && styles.pressed]}>
-            <Text style={styles.practiceButtonText}>PRACTICE THIS CONCEPT</Text>
+            <Text style={styles.practiceButtonText}>START GUIDED PRACTICE →</Text>
           </Pressable>
         </View>
 
@@ -327,6 +330,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   practicePromise: { color: '#D9FFF5', fontSize: 17, fontWeight: '900', lineHeight: 24 },
+  practiceTransfer: { color: '#DCE8F2', fontSize: 15, fontWeight: '700', lineHeight: 22 },
   practiceIsolation: { color: '#9FB2C5', fontSize: 13, lineHeight: 20 },
   practiceButton: {
     alignItems: 'center',

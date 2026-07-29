@@ -15,6 +15,7 @@ const mockRepository: LocalProgressRepository = {
 const mockRetry = jest.fn();
 const mockRecordCompletion = jest.fn<Promise<void>, [unknown]>();
 const mockNetworkChallenge = jest.fn((_props: unknown) => null);
+const mockGuidedPractice = jest.fn((_props: unknown) => null);
 const mockTimedChallenge = jest.fn((_props: unknown) => null);
 const mockBackHandlerRemove = jest.fn();
 let mockHardwareBackPress: (() => boolean | null | undefined) | undefined;
@@ -47,6 +48,17 @@ jest.mock('@/features/challenge/NetworkChallenge', () => {
     NetworkChallenge: (props: unknown) => {
       mockNetworkChallenge(props);
       return ReactModule.createElement(View, { testID: 'network-challenge' });
+    },
+  };
+});
+
+jest.mock('@/features/learning/GuidedPractice', () => {
+  const ReactModule = require('react');
+  const { View } = require('react-native');
+  return {
+    GuidedPractice: (props: unknown) => {
+      mockGuidedPractice(props);
+      return ReactModule.createElement(View, { testID: 'guided-practice' });
     },
   };
 });
@@ -98,6 +110,7 @@ describe('HomeScreen launch and menu flow', () => {
     mockRetry.mockClear();
     mockRecordCompletion.mockReset();
     mockNetworkChallenge.mockClear();
+    mockGuidedPractice.mockClear();
     mockTimedChallenge.mockClear();
     mockBackHandlerRemove.mockClear();
     mockHardwareBackPress = undefined;
@@ -188,7 +201,7 @@ describe('HomeScreen launch and menu flow', () => {
     expect(completed.getByRole('button', { name: 'VIEW COMPLETED JOURNEY' })).toBeTruthy();
   });
 
-  it('opens optional learning, returns to the menu, and starts untimed practice without gating the Journey', async () => {
+  it('opens optional learning and starts dedicated practice without Journey or persistence coupling', async () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
@@ -199,20 +212,19 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByText(/Optional and unscored/)).toBeTruthy();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
-    expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
+    await fireEvent.press(screen.getByRole('button', { name: 'Start guided practice' }));
+    expect(screen.getByTestId('guided-practice')).toBeTruthy();
+    expect(screen.queryByTestId('network-challenge')).toBeNull();
+    expect(mockRecordCompletion).not.toHaveBeenCalled();
 
-    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'Practice this concept' }));
-    expect(screen.getByTestId('network-challenge')).toBeTruthy();
-    expect(screen.getByText('Practice only — this does not change your Journey progress.')).toBeTruthy();
+    const practiceProps = mockGuidedPractice.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+    expect(Object.keys(practiceProps)).toEqual(['onBack']);
+    expect(typeof practiceProps.onBack).toBe('function');
 
-    const practiceProps = mockNetworkChallenge.mock.calls.at(-1)?.[0] as {
-      initialCompletedOrdinals: readonly number[];
-      onQuestionCompleted(question: SubnetQuestion): Promise<void> | void;
-    };
-    expect(practiceProps.initialCompletedOrdinals).toEqual([]);
-    await practiceProps.onQuestionCompleted(subnetQuestionCatalog[0]);
+    await act(async () => {
+      (practiceProps.onBack as () => void)();
+    });
+    expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
     expect(mockRecordCompletion).not.toHaveBeenCalled();
   });
 
@@ -328,6 +340,23 @@ describe('HomeScreen launch and menu flow', () => {
       expect(mockHardwareBackPress?.()).toBe(true);
     });
     expect(screen.getByRole('button', { name: 'LEARN SUBNETTING' })).toBeTruthy();
+  });
+
+  it('returns from Guided Practice to Learn with Android hardware Back', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Start guided practice' }));
+    expect(screen.getByTestId('guided-practice')).toBeTruthy();
+
+    await act(async () => {
+      expect(mockHardwareBackPress?.()).toBe(true);
+    });
+
+    expect(screen.queryByTestId('guided-practice')).toBeNull();
+    expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'LEARN SUBNETTING' })).toBeNull();
   });
 
   it('roundtrips through practical How to Play instructions', async () => {

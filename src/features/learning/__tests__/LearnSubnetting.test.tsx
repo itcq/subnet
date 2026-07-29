@@ -118,10 +118,11 @@ describe('LearnSubnetting', () => {
 
     expect(view.getByText('Practice without pressure')).toBeTruthy();
     expect(view.getByText('No timer. No score. Unlimited retries.')).toBeTruthy();
+    expect(view.getByText('Four examples gradually remove the hints so you can prove the method transfers.')).toBeTruthy();
     expect(
       view.getByText('Practice here is optional and never changes Journey, Timed, rank, badge, or achievement progress.'),
     ).toBeTruthy();
-    expect(view.getByRole('button', { name: 'Practice this concept' })).toBeTruthy();
+    expect(view.getByRole('button', { name: 'Start guided practice' })).toBeTruthy();
   });
 
   it('renders engine-validated worked examples and pressure-free practice copy', async () => {
@@ -166,7 +167,7 @@ describe('LearnSubnetting', () => {
     const view = await render(<LearnSubnetting onBack={onBack} onStartPractice={onStartPractice} />);
 
     await fireEvent.press(view.getByRole('button', { name: 'Back to main menu' }));
-    await fireEvent.press(view.getByRole('button', { name: 'Practice this concept' }));
+    await fireEvent.press(view.getByRole('button', { name: 'Start guided practice' }));
 
     expect(onBack).toHaveBeenCalledTimes(1);
     expect(onStartPractice).toHaveBeenCalledTimes(1);
