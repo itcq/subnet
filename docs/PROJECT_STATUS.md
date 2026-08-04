@@ -4,13 +4,13 @@
 
 ## Executive status
 
-Subnet Game has a deployed alpha and a public-production release candidate with a deterministic IPv4 subnetting Journey, beginner Learn path, Guided Practice transfer set, optional Timed Mode, and responsive mobile-browser input. The product is web-first: mobile browser functionality is the primary target and desktop browsers provide the complete experience.
+Subnet Game is a public-production static web application with a deterministic IPv4 subnetting Journey, beginner Learn path, Guided Practice transfer set, optional Timed Mode, and responsive mobile-browser input. The product is web-first: mobile browser functionality is the primary target and desktop browsers provide the complete experience.
 
 ## Current revision
 
-Public-production release candidate:
+Released:
 
-- Responsive web target at `https://itcq.github.io/subnet/`
+- Public responsive web product at `https://itcq.github.io/subnet/`
 - Versioned browser-local Journey persistence
 - Web-default development and production export workflow
 - Mobile-browser-first delivery with complete desktop access
@@ -27,7 +27,7 @@ Public-production release candidate:
 - Local unverified rank/badge presentation
 - Mobile-safe four-octet answer entry
 - Static GitHub Pages export under `/subnet`
-- Candidate production search metadata and public crawler access
+- Production search metadata and public crawler access
 
 ## Progress semantics
 

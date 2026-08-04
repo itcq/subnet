@@ -71,7 +71,7 @@ The Journey is untimed. Timed practice is optional and does not gate learning pr
 
 ## Current maturity
 
-**Stage:** Public-production web release candidate with durable same-browser Journey progress.
+**Stage:** Public production web release with durable same-browser Journey progress.
 
 The next product evidence is true-beginner comprehension and transfer testing. Cross-device accounts and native apps remain optional later decisions.
 

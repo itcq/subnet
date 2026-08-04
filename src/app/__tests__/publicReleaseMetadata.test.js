@@ -46,16 +46,18 @@ describe('public release metadata', () => {
     expect(isHtmlDocument('entry.js')).toBe(false);
   });
 
-  it('does not predeclare the release candidate as already published', () => {
-    const releaseStatus = [
-      readProjectFile('CHANGELOG.md'),
-      readProjectFile('docs/ALPHA_TESTER_GUIDE.md'),
-      readProjectFile('docs/PROJECT_OVERVIEW.md'),
-      readProjectFile('docs/PROJECT_STATUS.md'),
-    ].join('\n');
+  it('records the verified public release consistently', () => {
+    const changelog = readProjectFile('CHANGELOG.md');
+    const alphaGuide = readProjectFile('docs/ALPHA_TESTER_GUIDE.md');
+    const projectOverview = readProjectFile('docs/PROJECT_OVERVIEW.md');
+    const projectStatus = readProjectFile('docs/PROJECT_STATUS.md');
 
-    expect(releaseStatus).not.toMatch(/publicly released|published the responsive|^released:/im);
-    expect(releaseStatus).not.toMatch(/stage:\*\* public production web release with/i);
+    expect(changelog).toContain('## 1.0.0 — 2026-08-04');
+    expect(changelog).toContain('Published the responsive web product');
+    expect(alphaGuide).toContain('responsive web product is now publicly released');
+    expect(projectOverview).toContain('**Stage:** Public production web release');
+    expect(projectStatus).toContain('Released:');
+    expect(projectStatus).toContain('https://itcq.github.io/subnet/');
   });
 
   it('clears persistent bundler state for canonical production exports', () => {

@@ -1,6 +1,6 @@
 # Alpha Tester Guide
 
-> Historical note: this guide documents the private alpha validation phase. The responsive web release candidate's current behavior and limitations are documented in `README.md` and `docs/PROJECT_STATUS.md`.
+> Historical note: this guide documents the private alpha validation phase. The responsive web product is now publicly released; current behavior and limitations are documented in `README.md` and `docs/PROJECT_STATUS.md`.
 
 ## Purpose
 

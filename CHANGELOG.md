@@ -2,7 +2,7 @@
 
 All notable project changes are recorded here.
 
-## 1.0.0 — Unreleased
+## 1.0.0 — 2026-08-04
 
 ### Added
 
@@ -38,7 +38,7 @@ All notable project changes are recorded here.
 - Clarified that the application is an independent standalone project
 - Prepared EAS development, preview, simulator, and production build profiles
 - Aligned Expo and React Native package versions with Expo SDK 57 requirements
-- Prepared the responsive web product with production metadata and public crawler access
+- Published the responsive web product with production metadata and public crawler access
 - Replaced user-facing alpha labels with accurate local-practice language
 - Removed the Expo starter template's root license so it is not mistaken for the project's license decision
 
