@@ -34,7 +34,7 @@ export function LocalAchievements({ results }: { results: readonly LocalTimedRes
         Local Rank & Badges
       </Text>
       <Text style={styles.notice}>
-        This alpha profile is stored locally. It is not a public leaderboard or a server-verified credential.
+        This practice profile is stored locally. It is not a public leaderboard or a server-verified credential.
       </Text>
 
       <View style={styles.rankCard}>
@@ -60,7 +60,7 @@ export function LocalAchievements({ results }: { results: readonly LocalTimedRes
         </View>
         <Text style={styles.nextRank}>
           {nextRank === undefined
-            ? 'Highest local alpha rank reached.'
+            ? 'Highest local practice rank reached.'
             : `${Math.max(0, nextRank.minimumScore - summary.totalScore).toLocaleString('en-US')} points to ${nextRank.name}`}
         </Text>
       </View>
@@ -80,7 +80,7 @@ export function LocalAchievements({ results }: { results: readonly LocalTimedRes
             <View style={styles.badgeContent}>
               <Text style={styles.badgeName}>{badge.name}</Text>
               <Text style={styles.bodyText}>{badge.description}</Text>
-              <Text style={styles.verificationLabel}>LOCAL ALPHA ACHIEVEMENT</Text>
+              <Text style={styles.verificationLabel}>LOCAL PRACTICE ACHIEVEMENT</Text>
               <Pressable
                 accessibilityLabel={`Share ${badge.name} badge`}
                 accessibilityRole="button"

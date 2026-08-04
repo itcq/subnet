@@ -77,7 +77,7 @@ Web/base factory. Creates one durable browser repository and discloses that prog
 
 - Unfinished answers
 - Guided Practice completion
-- Timed alpha scores/ranks/badges beyond the current session
+- Timed practice scores/ranks/badges beyond the current session
 - Personal identity
 
 ### Scope
@@ -100,10 +100,10 @@ At every width, interactive controls must remain visible, octet inputs must not 
 
 - Expo SDK 57 managed project
 - Expo Router `web.output: static`
-- Production export with `npx expo export --platform web`
+- Canonical cache-cleared production export with `npm run export:web`
 - GitHub Pages base path `/subnet`
 - `.nojekyll` required
-- `noindex,nofollow,noarchive` plus crawler denial remain limited-discovery controls, not access control
+- production title, description, canonical URL, and public crawler access support discovery
 
 ## Future cross-device sync
 

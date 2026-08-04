@@ -387,7 +387,7 @@ export function TimedChallenge({
           </Pressable>
         )}
         <Text style={styles.localNotice}>
-          Alpha scores, ranks, and badges are kept in this app session and are not server-verified competitive results.
+          Local scores, ranks, and badges are kept in this app session and are not server-verified competitive results.
         </Text>
       </ScrollView>
     </KeyboardAvoidingView>

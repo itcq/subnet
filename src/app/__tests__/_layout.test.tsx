@@ -38,6 +38,6 @@ describe('RootLayout', () => {
   it('sets a descriptive static and hydrated document title', async () => {
     const view = await render(<RootLayout />);
 
-    expect(view.getByTestId('document-title')).toHaveTextContent('Subnet Game Alpha');
+    expect(view.getByTestId('document-title')).toHaveTextContent('Subnet Game');
   });
 });

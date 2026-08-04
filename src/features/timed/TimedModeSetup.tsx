@@ -17,13 +17,13 @@ export function TimedModeSetup({ onBack, onStartTimed, onStartUntimed }: TimedMo
       </Text>
 
       <View style={styles.rulesCard}>
-        <Text style={styles.cardTitle}>LOCAL ALPHA SCORING</Text>
+        <Text style={styles.cardTitle}>LOCAL PRACTICE SCORING</Text>
         <Text style={styles.rule}>Start with 1,000 points.</Text>
         <Text style={styles.rule}>The available score drops by 5 points per elapsed second.</Text>
         <Text style={styles.rule}>Hints unlock after three incorrect attempts.</Text>
         <Text style={styles.rule}>Each revealed hint deducts 150 points.</Text>
         <Text style={styles.rule}>A correct timed solve is always worth at least 100 points.</Text>
-        <Text style={styles.rule}>The local-alpha timer pauses while the app is in the background.</Text>
+        <Text style={styles.rule}>The local practice timer pauses while the app is in the background.</Text>
       </View>
 
       <View style={styles.noticeCard}>
@@ -41,7 +41,7 @@ export function TimedModeSetup({ onBack, onStartTimed, onStartUntimed }: TimedMo
 
       <View style={styles.optionCard}>
         <Text style={styles.optionTitle}>2-minute local practice</Text>
-        <Text style={styles.optionText}>The standard alpha preset for a focused typed-answer challenge.</Text>
+        <Text style={styles.optionText}>The standard preset for a focused typed-answer challenge.</Text>
         <Action label="START 2-MINUTE MODE" onPress={() => onStartTimed(120)} primary />
       </View>
 

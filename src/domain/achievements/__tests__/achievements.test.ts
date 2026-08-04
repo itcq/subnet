@@ -18,7 +18,7 @@ function result(overrides: Partial<LocalTimedResult> = {}): LocalTimedResult {
   };
 }
 
-describe('local alpha achievements', () => {
+describe('local practice achievements', () => {
   it('starts at Explorer with no badges and labels the summary as local-only', () => {
     const summary = calculateAchievementSummary([]);
 
@@ -27,7 +27,7 @@ describe('local alpha achievements', () => {
       completedTimedChallenges: 0,
       rank: LOCAL_RANKS[0],
       badges: [],
-      verification: 'local-alpha-not-server-verified',
+      verification: 'local-practice-not-server-verified',
     });
     expect(Object.isFrozen(summary)).toBe(true);
     expect(Object.isFrozen(summary.badges)).toBe(true);
@@ -60,7 +60,7 @@ describe('local alpha achievements', () => {
       'persistent-solver',
       'hint-explorer',
     ]);
-    expect(summary.badges.every(({ verification }) => verification === 'local-alpha-not-server-verified')).toBe(true);
+    expect(summary.badges.every(({ verification }) => verification === 'local-practice-not-server-verified')).toBe(true);
   });
 
   it('awards repeat practice after five unique timed solves', () => {
@@ -94,7 +94,7 @@ describe('local alpha achievements', () => {
 
     expect(message).toContain('First Timed Solve');
     expect(message).toContain('Subnet Game');
-    expect(message).toContain('local alpha achievement');
+    expect(message).toContain('local achievement');
     expect(message).toContain('not a server-verified credential');
     expect(message).not.toMatch(/question|ordinal|student|email|user|800/i);
   });

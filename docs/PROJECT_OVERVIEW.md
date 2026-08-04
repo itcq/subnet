@@ -44,7 +44,7 @@ The Journey is untimed. Timed practice is optional and does not gate learning pr
 - Hydration gating, accessible load retry, and persistence-safe UI updates
 - React Native Web segmented inputs with numeric keyboard hints and WebKit text-fill/caret safeguards
 - Jest component, unit, and property-based coverage
-- GitHub Pages `/subnet` base path, `.nojekyll`, anti-indexing metadata, and crawler denial
+- GitHub Pages `/subnet` base path, `.nojekyll`, public indexing metadata, and crawler access
 - Dormant native SQLite/SecureStore/EAS infrastructure for a possible future phase
 
 ## Not yet implemented
@@ -71,7 +71,7 @@ The Journey is untimed. Timed practice is optional and does not gate learning pr
 
 ## Current maturity
 
-**Stage:** Functional web alpha with durable same-browser Journey progress.
+**Stage:** Public-production web release candidate with durable same-browser Journey progress.
 
 The next product evidence is true-beginner comprehension and transfer testing. Cross-device accounts and native apps remain optional later decisions.
 

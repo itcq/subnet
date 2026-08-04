@@ -38,6 +38,9 @@ jobs:
       - name: Export production web artifact
         run: npm run export:web
 
+      - name: Verify public release artifact
+        run: npm run verify:release
+
       - name: Upload production web artifact
         uses: actions/upload-artifact@v4
         with:

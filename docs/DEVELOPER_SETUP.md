@@ -41,14 +41,16 @@ The project gate runs Jest serially, Expo ESLint, TypeScript without output, and
 
 ```bash
 npm run export:web
+npm run verify:release
 ```
 
 The production app uses Expo Router static output and a `/subnet` GitHub Pages base path. Exact-artifact review must preserve:
 
+- `index.html` as the only published HTML route; generated Expo diagnostic pages are removed
 - `/subnet/_expo/` asset paths
 - `.nojekyll`
-- `noindex,nofollow,noarchive`
-- crawler denial in `robots.txt`
+- production title, description, canonical URL, and social metadata
+- public crawler access in `robots.txt`
 - no `/explore` route
 
 ## Browser persistence

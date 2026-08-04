@@ -1,8 +1,8 @@
 # Changelog
 
-All notable project changes are recorded here. The project has not yet published a tagged release.
+All notable project changes are recorded here.
 
-## Unreleased
+## 1.0.0 — Unreleased
 
 ### Added
 
@@ -38,6 +38,8 @@ All notable project changes are recorded here. The project has not yet published
 - Clarified that the application is an independent standalone project
 - Prepared EAS development, preview, simulator, and production build profiles
 - Aligned Expo and React Native package versions with Expo SDK 57 requirements
+- Prepared the responsive web product with production metadata and public crawler access
+- Replaced user-facing alpha labels with accurate local-practice language
 - Removed the Expo starter template's root license so it is not mistaken for the project's license decision
 
 ### Fixed

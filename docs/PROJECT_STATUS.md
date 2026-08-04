@@ -4,16 +4,17 @@
 
 ## Executive status
 
-Subnet Game is a deployed static web application with a deterministic IPv4 subnetting Journey, beginner Learn path, Guided Practice transfer set, optional Timed Mode, and responsive mobile-browser input. The product is now web-first: mobile browser functionality is the primary target and desktop browsers provide the complete experience.
+Subnet Game has a deployed alpha and a public-production release candidate with a deterministic IPv4 subnetting Journey, beginner Learn path, Guided Practice transfer set, optional Timed Mode, and responsive mobile-browser input. The product is web-first: mobile browser functionality is the primary target and desktop browsers provide the complete experience.
 
 ## Current revision
 
-In progress:
+Public-production release candidate:
 
-- Replace reload-cleared web Journey state with versioned browser-local persistence.
-- Make web the default development/export workflow.
-- Reframe architecture and rollout documentation around mobile-browser-first delivery.
-- Preserve native Expo/SQLite infrastructure as dormant future capability.
+- Responsive web target at `https://itcq.github.io/subnet/`
+- Versioned browser-local Journey persistence
+- Web-default development and production export workflow
+- Mobile-browser-first delivery with complete desktop access
+- Dormant native Expo/SQLite infrastructure preserved for possible future use
 
 ## Verified product capabilities
 
@@ -26,7 +27,7 @@ In progress:
 - Local unverified rank/badge presentation
 - Mobile-safe four-octet answer entry
 - Static GitHub Pages export under `/subnet`
-- Anti-indexing and crawler-denial controls
+- Candidate production search metadata and public crawler access
 
 ## Progress semantics
 
@@ -34,12 +35,12 @@ In progress:
 - Progress does not sync across devices or browsers.
 - Clearing browser site data may remove progress.
 - Guided Practice remains unpersisted and competitively isolated.
-- Timed alpha scores/ranks/badges remain session-local and unverified.
+- Timed practice scores/ranks/badges remain session-local and unverified.
 - No account or authoritative cloud progress is implemented.
 
-## Current release gate
+## Release process
 
-Before this revision is released:
+Each public release verifies:
 
 - Browser repository regression tests pass.
 - Full tests, lint, TypeScript, and Expo Doctor pass.
@@ -47,7 +48,6 @@ Before this revision is released:
 - Journey completion survives a real artifact reload.
 - Storage corruption produces an accessible load/retry state without data deletion.
 - Production artifact matches the approved manifest byte-for-byte.
-- Independent review passes against the exact staged tree.
 
 ## Known limitations
 
@@ -55,9 +55,9 @@ Before this revision is released:
 - No account recovery/export/deletion because accounts do not exist
 - Browser-private/storage-restricted modes may prevent persistence
 - Multiple tabs are not a real-time synchronization system
-- Physical iPhone WebKit verification is separate from desktop responsive emulation
+- Physical-device browser checks remain a separate release input from desktop responsive emulation
 - Native packaging, store distribution, and physical native persistence QA are deferred
 
 ## Next product evidence
 
-After web persistence is released, test the full lesson and Guided Practice flow with true beginners. Use observed transfer—not completion rate alone—to decide the next curriculum increment.
+Observe the full lesson and Guided Practice flow with real learners. Use observed transfer—not completion rate alone—to decide the next curriculum increment while fixing production defects as they appear.

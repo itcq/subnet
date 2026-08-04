@@ -16,6 +16,8 @@ describe('TimedModeSetup', () => {
     expect(view.getByText(/Hints unlock after three incorrect attempts/)).toBeTruthy();
     expect(view.getByText(/Each revealed hint deducts 150 points/)).toBeTruthy();
     expect(view.getByText(/Local practice result — unverified/)).toBeTruthy();
+    expect(view.getByText('LOCAL PRACTICE SCORING')).toBeTruthy();
+    expect(view.queryByText(/alpha/i)).toBeNull();
     expect(
       view.getByText(/Both presets contribute to the same session-local totals/),
     ).toBeTruthy();

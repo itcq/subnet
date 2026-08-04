@@ -1,4 +1,4 @@
-export const LOCAL_ACHIEVEMENT_VERIFICATION = 'local-alpha-not-server-verified' as const;
+export const LOCAL_ACHIEVEMENT_VERIFICATION = 'local-practice-not-server-verified' as const;
 
 export type LocalTimedResult = Readonly<{
   resultId: string;
@@ -150,5 +150,5 @@ export function buildLocalBadgeShareMessage(
     throw new Error(`Badge ${badgeId} has not been earned`);
   }
 
-  return `I earned the ${definition.name} local alpha achievement in Subnet Game. This is a local practice milestone, not a server-verified credential.`;
+  return `I earned the ${definition.name} local achievement in Subnet Game. This is a local practice milestone, not a server-verified credential.`;
 }

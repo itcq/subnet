@@ -2,13 +2,11 @@
 
 ## Current support status
 
-This project is a pre-release prototype. No production security contact or public vulnerability-reporting channel has been approved.
+This project is a public static web application. It has no account system, application backend, cloud progress synchronization, payment flow, or authoritative credential system. Journey progress is stored in the learner's browser.
 
 ## Reporting a security issue
 
-Until a formal address is established, report suspected vulnerabilities privately to the project owner. Do not open a public issue containing credentials, personal data, exploit details, or active account information.
-
-Production launch requires a dedicated security/support address and response process.
+Report suspected vulnerabilities privately to the project owner. Do not open a public issue containing credentials, personal data, exploit details, or active exploit information. A dedicated public security address has not been published.
 
 ## Secret handling
 
@@ -64,28 +62,19 @@ Only public client configuration may use `EXPO_PUBLIC_*`. Public keys do not rep
 ```bash
 npm run check
 npm run export:web
-npm run backend:reset
-npm run backend:test
+npm run verify:release
 git diff --check
 ```
 
-Also verify:
-
-- Cross-user RLS abuse tests
-- Account recovery, sign-out, and deletion
-- Offline retry and duplicate synchronization
-- Backup restoration
-- Email suppression/unsubscribe
-- Store privacy disclosures against production behavior
-- OWASP MASVS-aligned mobile review
+Also verify the exact static artifact, single-route HTML allowlist, browser-local progress reload, mobile input behavior, crawler metadata, absence of source maps/secrets, and production byte parity. Backend, account, and native-app security gates become mandatory only if those deferred capabilities are introduced.
 
 ## Dependency findings
 
 A July 26, 2026 `npm audit --omit=dev` reports 36 affected dependency paths (25 high, 11 moderate), but those paths collapse to two underlying transitive advisories:
 
-- **GHSA-mh99-v99m-4gvg (`brace-expansion`)** — denial of service when attacker-controlled brace/glob input is expanded inside a Node process. In this project it is reached through Jest/ESLint globbing and Expo fingerprint/build tooling. The alpha accepts no user-provided file or glob patterns, GitHub Pages runs no project Node process, and this package is not an application import.
+- **GHSA-mh99-v99m-4gvg (`brace-expansion`)** — denial of service when attacker-controlled brace/glob input is expanded inside a Node process. In this project it is reached through Jest/ESLint globbing and Expo fingerprint/build tooling. The web application accepts no user-provided file or glob patterns, GitHub Pages runs no project Node process, and this package is not an application import.
 - **GHSA-w5hq-g745-h8pq (`uuid`)** — missing output-buffer bounds checks in UUID v3/v5/v6. The dependency is reached only through the Node-based `xcode` config plugin, whose installed call site uses `uuid.v4()` without a caller-provided buffer. The application does not import `uuid`.
 
-These findings are assessed as **not reachable in the static web alpha runtime**. They remain present in the build dependency tree and must be reassessed when compatible Expo updates are available and before distributing native production builds. Do not force npm's suggested Expo/Jest downgrades; they are semver-major, SDK-incompatible remediations.
+These findings are assessed as **not reachable in the static web runtime**. They remain present in the build dependency tree and must be reassessed when compatible Expo updates are available and before distributing native production builds. Do not force npm's suggested Expo/Jest downgrades; they are semver-major, SDK-incompatible remediations.
 
 For each web release, export the exact reviewed tree and verify that neither advisory package is present in the emitted browser artifact. This is a scoped reachability assessment, not a claim that the dependency tree is vulnerability-free.

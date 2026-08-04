@@ -21,7 +21,7 @@ describe('LocalAchievements', () => {
 
   afterEach(() => jest.restoreAllMocks());
 
-  it('shows an honest empty local alpha profile', async () => {
+  it('shows an honest empty local practice profile', async () => {
     const view = await render(<LocalAchievements results={[]} />);
 
     expect(view.getByRole('header', { name: 'Local Rank & Badges' })).toBeTruthy();
@@ -49,7 +49,7 @@ describe('LocalAchievements', () => {
 
     expect(Share.share).toHaveBeenCalledWith({
       message:
-        'I earned the Hint Explorer local alpha achievement in Subnet Game. This is a local practice milestone, not a server-verified credential.',
+        'I earned the Hint Explorer local achievement in Subnet Game. This is a local practice milestone, not a server-verified credential.',
       title: 'Hint Explorer — Subnet Game',
     });
     const payload = jest.mocked(Share.share).mock.calls[0][0];

@@ -20,7 +20,7 @@ The initial product is **web only**:
 - Optional Learn hub with worked examples and multiple methods
 - Four-example Guided Practice with gradually reduced scaffolding
 - Optional two- and four-minute typed-answer practice
-- Local alpha points, personal rank bands, badges, and sharing with explicit unverified-result language
+- Local practice points, personal rank bands, badges, and sharing with explicit unverified-result language
 - Deterministic, versioned 500-question network-address curriculum
 - Four accessible octet inputs designed for narrow mobile screens
 - Immediate misconception-specific feedback and engine-derived subnet facts
@@ -62,9 +62,13 @@ npm run web
 ```bash
 npm run check
 npm run export:web
+npm run verify:release
 ```
 
 The production site uses Expo Router static output and GitHub Pages under `/subnet`.
+The export finalizer removes Expo's generated diagnostic HTML pages so only the intentional root route is published.
+
+**Live:** https://itcq.github.io/subnet/
 
 ## Deferred native work
 

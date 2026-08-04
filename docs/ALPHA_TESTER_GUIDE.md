@@ -1,5 +1,7 @@
 # Alpha Tester Guide
 
+> Historical note: this guide documents the private alpha validation phase. The responsive web release candidate's current behavior and limitations are documented in `README.md` and `docs/PROJECT_STATUS.md`.
+
 ## Purpose
 
 This alpha tests whether the subnetting Journey, optional learning material, Guided Practice, and optional timed practice are clear and useful.
@@ -60,7 +62,7 @@ If time expires, confirm the typed answer remains visible and **Continue Without
 3. Review personal points, rank progress, and earned badges.
 4. If a badge is available, try sharing it.
 
-Timed alpha results are local, session-only, and unverified. They are not a public leaderboard, competitive ranking, certification, or server-verified credential.
+Timed practice results are local, session-only, and unverified. They are not a public leaderboard, competitive ranking, certification, or server-verified credential.
 
 ## Progress behavior
 
