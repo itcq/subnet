@@ -137,7 +137,10 @@ export function GuidedOctetLesson({ onBack, scrollToTop }: GuidedOctetLessonProp
               <Text style={styles.target}>192.168.1.130</Text>
               <View accessibilityLabel="Four IPv4 octet columns" style={styles.octetRow}>
                 {octets.map((octet, index) => (
-                  <View key={index} style={styles.octetGroup}>
+                  <View
+                    key={index}
+                    style={styles.octetGroup}
+                    testID={`guided-octet-group-${index + 1}`}>
                     <TextInput
                       accessibilityLabel={`Guided octet ${index + 1}`}
                       inputMode="numeric"
@@ -546,8 +549,8 @@ const styles = StyleSheet.create({
   },
   cardLabel: { color: '#7FA0BC', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   target: { color: '#F6C857', fontSize: 24, fontVariant: ['tabular-nums'], fontWeight: '900', marginTop: 8 },
-  octetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 18, width: '100%' },
-  octetGroup: { alignItems: 'center', flexBasis: 128, flexDirection: 'row', flexGrow: 1, minWidth: 128 },
+  octetRow: { flexDirection: 'row', flexWrap: 'nowrap', gap: 4, marginTop: 18, width: '100%' },
+  octetGroup: { alignItems: 'center', flexBasis: 0, flexDirection: 'row', flexGrow: 1, minWidth: 0 },
   octetInput: {
     backgroundColor: '#091827',
     borderColor: '#31516F',
@@ -560,12 +563,12 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     fontWeight: '800',
     minHeight: 52,
-    minWidth: 64,
-    paddingHorizontal: 4,
+    minWidth: 0,
+    paddingHorizontal: 2,
     textAlign: 'center',
     WebkitTextFillColor: '#FFFFFF',
   } as TextStyle,
-  dot: { color: '#9BACBE', flexShrink: 0, fontSize: 20, fontWeight: '900', paddingHorizontal: 3 },
+  dot: { color: '#9BACBE', flexShrink: 0, fontSize: 18, fontWeight: '900', paddingHorizontal: 1 },
   helper: { color: '#9FB2C5', fontSize: 14, lineHeight: 21, marginTop: 14 },
   binaryRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 16, width: '100%' },
   bitButton: {

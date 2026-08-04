@@ -81,7 +81,7 @@ import { useLocalProgress } from '@/progress/useLocalProgress';
 const HomeScreen = require('../index').default as typeof import('../index').default;
 
 const WEB_NOTICE =
-  'Web progress is kept only for this browser session and is cleared when the page reloads.';
+  'Journey progress is saved in this browser. It does not sync across devices yet.';
 const TAGLINE = 'Learn subnetting one short lesson at a time.';
 
 jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_eventName, handler) => {
@@ -401,9 +401,9 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByRole('button', { name: 'VIEW JOURNEY' })).toBeTruthy();
   });
 
-  it('shows exactly one web persistence notice on every hydrated local screen', async () => {
+  it('shows exactly one browser-storage scope notice on every hydrated local screen', async () => {
     hydrated();
-    mockRuntime.durable = false;
+    mockRuntime.durable = true;
     mockRuntime.persistenceNotice = WEB_NOTICE;
     const screen = await render(<HomeScreen />);
 

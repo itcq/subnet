@@ -1,193 +1,110 @@
 # Architecture
 
-**Status:** Current implementation plus approved direction
+**Status:** Web-first implementation with deferred native infrastructure
 
-## System context
+## Current system
 
 ```text
-┌───────────────────────────────────────────────┐
-│ Expo application                             │
-│                                               │
-│  Challenge UI ──> Pure subnet domain engine  │
-│       │                                       │
-│       ├──> SQLite completion progress         │
-│       ├──> Detailed attempt outbox (planned)  │
-│       └──> SecureStore auth session           │
-└──────────────────────┬────────────────────────┘
-                       │ HTTPS + authenticated JWT
-                       ▼
-┌───────────────────────────────────────────────┐
-│ Supabase (planned; not provisioned)           │
-│                                               │
-│  Auth                                         │
-│  Postgres + Row Level Security                │
-│  Attempt validation / progress projection     │
-│  Server-side badge evaluation                 │
-│  Transactional event outbox                   │
-└──────────────────────┬────────────────────────┘
-                       │ server-side only
-                       ▼
-             Email provider (later)
-
-Restricted reporting UI (later) ──> server-authorized views/functions
+Mobile / tablet / desktop browser
+              │
+              ▼
+┌─────────────────────────────────────────────┐
+│ Expo Router static web application          │
+│                                             │
+│ UI ──> deterministic curriculum             │
+│  │          │                               │
+│  │          └──> canonical subnet engine    │
+│  │                                          │
+│  └──> BrowserProgressRepository             │
+│          └──> versioned localStorage        │
+└─────────────────────────────────────────────┘
+              │
+              ▼
+GitHub Pages at /subnet
 ```
 
-## Trust boundaries
+The initial product has no required application backend, account, or cloud synchronization path.
 
-### Device
+## Product target
 
-Trusted for:
+- **Primary:** narrow mobile browsers and touch input
+- **Supported:** tablet and desktop browsers with complete curriculum/progress access
+- **Deferred:** Apple App Store and Google Play packaging
 
-- Immediate lesson feedback
-- Local progress presentation
-- Durable local completion state on Android and iOS (automated-test-covered; physical restart verification pending)
-- Securely retaining managed auth session material
+Expo/React Native Web remains the implementation layer. This avoids a destructive rewrite and preserves an optional future native path without making native distribution a current requirement.
 
-Not trusted for:
-
-- Assigning roles
-- Declaring authoritative progress
-- Awarding permanent badges
-- Accessing another user's records
-- Holding service-role, database, SMTP, or email-provider secrets
-
-### Backend
-
-Responsible for:
-
-- Authentication identity
-- Ownership and role authorization
-- Attempt deduplication
-- Recomputing answers from known challenge/version data
-- Canonical progress projections
-- Versioned badge evaluation and unique awards
-- Consent/suppression checks before optional email
-- Auditable staff access
-
-## Implemented modules
+## Core modules
 
 ### `src/domain/subnet.ts`
 
-Pure TypeScript subnet engine. It validates IPv4/CIDR input and derives:
-
-- Network address
-- Broadcast address
-- Subnet mask
-- First/last host
-- Block size
-- Interesting octet
-- Total and usable addresses
-
-This module must remain free of React Native, Supabase, persistence, and UI dependencies.
+Pure TypeScript source of truth for IPv4/CIDR arithmetic. UI, persistence, and manually authored content must not duplicate production subnet calculations.
 
 ### `src/domain/questions/`
 
-Generates and validates the deterministic, versioned 500-question curriculum. Stable IDs and ordinals are persistence boundaries.
+Deterministic, versioned Journey catalog. Stable catalog versions, question IDs, and ordinals are persistence boundaries.
 
-### `src/features/challenge/`
+### `src/features/learning/`
 
-Contains the pure learner-session engine and active challenge interface. Answers and instructional facts are derived through the domain engine rather than duplicated manually.
+Optional beginner instruction and deterministic Guided Practice. Guided Practice remains unscored, unlimited-retry, and isolated from Journey, Timed Mode, ranks, badges, achievements, and persistence.
 
-### `src/progress/`
+### `src/progress/browserProgressRepository.ts`
 
-Defines the local progress contract, in-memory implementation, versioned Expo SQLite implementation, hydration hook, and platform-specific repository factories. Android and iOS use SQLite; web intentionally uses session-only memory.
+Web Journey storage adapter behind `LocalProgressRepository`.
 
-### `src/auth/secureSessionStorage.ts`
+- Resolves browser storage lazily so static export can render safely.
+- Stores only validated `LocalQuestionProgress` fields.
+- Uses key `subnet-game:journey-progress:v1`.
+- Uses payload `{ schemaVersion: 1, records: [...] }`.
+- Fails closed on malformed, unsupported, unavailable, or unwritable storage.
+- Does not silently delete corrupt data.
 
-Adapts Expo SecureStore to the Supabase storage contract. On iOS, values use `AFTER_FIRST_UNLOCK` accessibility.
+### `src/progress/createProgressRepository.ts`
 
-### `src/lib/supabase.ts`
+Web/base factory. Creates one durable browser repository and discloses that progress does not sync across devices.
 
-Constructs a Supabase client with:
+### Dormant native adapters
 
-- PKCE flow
-- SecureStore persistence
-- Token auto-refresh
-- URL session detection disabled for the native client
-- Required public-configuration validation
+`createProgressRepository.native.ts` and `sqliteProgressRepository.ts` remain available for a possible future native phase. They are not part of the current web release target or acceptance gate.
 
-No singleton client or auth provider is connected to the UI yet.
+## Persistence semantics
 
-### `supabase/config.toml`
+### Saved
 
-Local Supabase configuration currently sets:
+- Correctly completed Journey questions
+- Stable catalog version, question ID, ordinal, timestamp, attempt count, and pending-sync marker
 
-- New signups disabled for invite-only beta direction
-- Anonymous sign-in disabled
-- Email confirmation enabled
-- Refresh-token rotation enabled
-- Exact web/native callback allowlist
-- 15-minute OTP expiry
-- 60-second email resend frequency
+### Not saved
 
-## Planned data model
+- Unfinished answers
+- Guided Practice completion
+- Timed alpha scores/ranks/badges beyond the current session
+- Personal identity
 
-```text
-profiles
-user_roles
-missions
-challenges
-attempts
-progress_summary
-badge_definitions
-badge_awards
-email_preferences
-consent_events
-outbox_events
-```
+### Scope
 
-Key rules:
+Browser storage is scoped to the browser profile and origin. It survives reloads but does not move between phone and desktop, browsers, or devices. Clearing site data can remove it.
 
-- Authentication-provider UUID is the stable user key.
-- Attempts are immutable and idempotent.
-- Progress is a rebuildable projection.
-- Badge criteria and awards are versioned.
-- Registration creates only a student role.
-- Optional communication preferences default off.
+This local state is useful for learning continuity but is not authoritative evidence or a credential.
 
-## Planned attempt flow
+## Responsive boundary
 
-1. Learner submits an answer.
-2. App computes immediate instructional feedback locally.
-3. App writes an immutable UUID-based attempt to SQLite.
-4. Outbox synchronizes when authenticated connectivity exists.
-5. Server derives user ID from the access token.
-6. Server validates challenge/version and recomputes correctness.
-7. Transaction inserts the attempt, updates progress, evaluates badges, and writes notification events.
-8. Client acknowledges accepted/duplicate events without losing rejected diagnostics.
+Release QA prioritizes:
 
-## Authorization model
+1. 390px narrow mobile browser
+2. 768px tablet browser
+3. 1440px desktop browser
 
-- Anonymous: no student data access
-- Student: own profile, attempts, progress, badges, and preferences only
-- Support: limited audited lookup after role approval
-- Instructor: approved aggregate/instructional views
-- Administrator: least-privilege administration with MFA/AAL2
+At every width, interactive controls must remain visible, octet inputs must not overlap, touch targets must remain usable, internal scrolling must reset correctly, and horizontal overflow must be zero.
 
-UI hiding is not authorization. RLS and trusted server functions enforce access.
+## Deployment
 
-## Offline strategy
+- Expo SDK 57 managed project
+- Expo Router `web.output: static`
+- Production export with `npx expo export --platform web`
+- GitHub Pages base path `/subnet`
+- `.nojekyll` required
+- `noindex,nofollow,noarchive` plus crawler denial remain limited-discovery controls, not access control
 
-The lesson must remain playable when:
+## Future cross-device sync
 
-- The device is offline
-- Authentication refresh temporarily fails
-- The backend is unavailable
-
-Unsynchronized work remains visible as local practice. Only server-validated work may be labeled verified mastery.
-
-## Build and release path
-
-- Expo SDK 57 managed workflow
-- EAS cloud builds
-- Internal Android APK and iOS preview testing first
-- Final identifiers, ownership, branding, privacy/support URLs, and signing accounts still pending
-
-## Architectural constraints
-
-- Standalone independent application
-- No LMS or external account integration
-- No custom password storage or cryptography
-- No public leaderboard or loss-framed streak mechanics
-- No real personal data before privacy/retention/deletion approval
-- No production secrets in mobile bundles or source control
+Cross-device continuity requires an account and trusted backend. If demand justifies it, add that as a separate security-reviewed vertical slice. Do not reinterpret local browser storage as cloud sync.

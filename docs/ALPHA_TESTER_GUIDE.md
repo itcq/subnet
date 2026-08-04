@@ -2,27 +2,30 @@
 
 ## Purpose
 
-This alpha tests whether the subnetting journey, optional learning material, and optional timed practice are clear and useful before broader distribution.
+This alpha tests whether the subnetting Journey, optional learning material, Guided Practice, and optional timed practice are clear and useful.
 
 ## Limited-link access
 
-The tester URL is unlisted and asks search engines not to index it, but it is **not private or access-controlled**. Anyone with the URL can open or forward it. Do not enter sensitive or personal information.
+The URL is unlisted and asks search engines not to index it, but it is **not private or access-controlled**. Anyone with the URL can open or forward it. Do not enter sensitive or personal information.
 
-This is an independent, standalone project. External learning resources are linked for convenience; inclusion does not imply affiliation, partnership, or endorsement. Opening an external resource leaves the app and is subject to that third party's privacy practices and terms.
+This is an independent standalone project. External resources are linked for convenience; inclusion does not imply affiliation, partnership, or endorsement.
 
-## Recommended test device
+## Recommended devices
 
-Start with the web version using a desktop or mobile browser. Android and iOS builds are also supported by the source project, but physical-device restart testing is still pending.
+Start on a phone browser because mobile functionality is the primary target. If possible, continue testing in a tablet or desktop browser.
+
+There are no current Apple or Android app-store builds. Native packaging is deferred.
 
 ## What to test
 
 ### 1. Main Journey
 
 1. Select **Start Journey**.
-2. Enter the network address using the four typed octet fields.
-3. Submit an incorrect answer and review the instructional feedback.
+2. Enter a network address using the four octet fields.
+3. Submit an incorrect answer and review the feedback.
 4. Submit the correct answer and continue.
-5. Return to the menu, then confirm that **Continue Journey** resumes correctly during the same web session.
+5. Reload the page.
+6. Confirm **Continue Journey** resumes at the first incomplete question.
 
 The Journey is untimed. Learning and Timed Mode do not gate or change Journey progress.
 
@@ -30,16 +33,17 @@ The Journey is untimed. Learning and Timed Mode do not gate or change Journey pr
 
 1. Select **Learn Subnetting**.
 2. Compare the block-size and binary-boundary methods.
-3. Review each worked example.
-4. Open one external resource link.
-5. Select **Practice This Concept** and confirm it returns to untimed Journey practice.
+3. Review worked examples.
+4. Complete the six-step guided lesson.
+5. Complete all four Guided Practice scenarios.
+6. Try one new `/26–/29` example without app hints and explain your method aloud.
 
-The learning section is optional and does not award scores, ranks, or badges.
+Learning and Guided Practice are optional, unscored, and do not award ranks or badges.
 
 ### 3. Timed Mode
 
 1. Select **Play Timed Mode**.
-2. Review the rules before starting.
+2. Confirm the setup title and instructions are readable.
 3. Try the two-minute preset.
 4. Submit three incorrect answers.
 5. Confirm hints become available only after the third incorrect attempt.
@@ -47,44 +51,60 @@ The learning section is optional and does not award scores, ranks, or badges.
 7. Complete a timed solve if possible.
 8. Optionally repeat with the four-minute preset.
 
-If time expires, confirm that the typed answer remains visible and that **Continue Without Timer** allows score-free practice.
+If time expires, confirm the typed answer remains visible and **Continue Without Timer** allows score-free practice.
 
 ### 4. Local Rank and Badges
 
 1. Return to the main menu.
 2. Select **Local Rank & Badges**.
-3. Review personal points, rank progress, and any earned badges.
-4. If a badge is available, try the share action.
+3. Review personal points, rank progress, and earned badges.
+4. If a badge is available, try sharing it.
 
-These alpha results are local, unverified practice results. They are not a public leaderboard, competitive ranking, certification, or server-verified credential.
+Timed alpha results are local, session-only, and unverified. They are not a public leaderboard, competitive ranking, certification, or server-verified credential.
 
-## Important web limitation
+## Progress behavior
 
-Web Journey progress, timed results, ranks, and badges are kept only for the current browser session. Reloading or closing the page clears them. The app displays this limitation directly.
+Journey completion is saved in the current browser and survives reloads on the same site.
+
+It does not sync between a phone and desktop, between browsers, or between devices. Clearing site data or using storage-restricted/private browsing may remove or block it.
+
+Timed scores, ranks, and badges remain session-local and can disappear when the page session ends.
 
 Do not use this alpha for high-stakes assessment or verified student ranking.
 
+## Mobile checks
+
+Please specifically report:
+
+- Whether all four octets remain on one readable line
+- Whether the keyboard hides the active input or button
+- Whether typed digits and the caret remain visible
+- Whether anything overlaps or scrolls horizontally
+- Whether browser Back behaves as expected
+- Whether rotation or returning from another tab causes a problem
+
 ## Feedback requested
 
-Please report:
+Include:
 
 - Device and browser
-- Which section you were using
-- What you expected to happen
-- What actually happened
-- Screenshot or screen recording, if possible
-- Whether the instructions were clear
+- Section and step
+- What you expected
+- What happened
+- Screenshot or recording, if possible
+- Whether instructions were clear
 - Whether any interaction felt confusing, stressful, or unfair
 - Which learning method was easiest to understand
-- Whether you would voluntarily use Timed Mode again
+- Whether you could solve a new example without hints
 
-Do not include passwords, private account information, or sensitive personal information in feedback.
+Do not include passwords, private account information, or sensitive personal information.
 
 ## Known limitations
 
-- No account or cloud synchronization
-- No durable web progress after reload
+- No account or cross-device synchronization
+- Timed scores/ranks/badges are session-local
 - No server-authoritative scores or rankings
 - No verified public badges or credentials
 - No public student leaderboard
-- Physical Android and iOS restart testing remains pending
+- Physical iPhone WebKit verification is tracked separately from desktop emulation
+- Native packaging and store distribution are deferred

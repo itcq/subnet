@@ -1,4 +1,5 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { TimedModeSetup } from '../TimedModeSetup';
 
@@ -42,5 +43,23 @@ describe('TimedModeSetup', () => {
     expect(onStartTimed).toHaveBeenNthCalledWith(1, 120);
     expect(onStartTimed).toHaveBeenNthCalledWith(2, 240);
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps shell-level copy and the back action readable on the dark app background', async () => {
+    const view = await render(
+      <TimedModeSetup onBack={jest.fn()} onStartTimed={jest.fn()} onStartUntimed={jest.fn()} />,
+    );
+
+    const titleStyle = StyleSheet.flatten(
+      view.getByRole('header', { name: 'Choose Your Play Style' }).props.style,
+    );
+    const introStyle = StyleSheet.flatten(view.getByText(/Timed practice is always optional/).props.style);
+    const backStyle = StyleSheet.flatten(view.getByRole('button', { name: 'BACK' }).props.style);
+    const backTextStyle = StyleSheet.flatten(view.getByText('BACK').props.style);
+
+    expect(titleStyle.color).toBe('#F5F8FB');
+    expect(introStyle.color).toBe('#C8D4E0');
+    expect(backStyle.borderColor).toBe('#F6C857');
+    expect(backTextStyle.color).toBe('#F6C857');
   });
 });

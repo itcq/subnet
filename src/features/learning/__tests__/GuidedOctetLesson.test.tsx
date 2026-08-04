@@ -201,13 +201,15 @@ describe('GuidedOctetLesson', () => {
     expect(bitStyle.minWidth).toBeGreaterThanOrEqual(44);
   });
 
-  it('allows four octet fields to wrap without shrinking digits away', async () => {
+  it('keeps four octet fields on one semantic row at narrow mobile widths', async () => {
     const view = await render(<GuidedOctetLesson onBack={jest.fn()} />);
     const rowStyle = StyleSheet.flatten(view.getByLabelText('Four IPv4 octet columns').props.style);
+    const groupStyle = StyleSheet.flatten(view.getByTestId('guided-octet-group-1').props.style);
     const fieldStyle = StyleSheet.flatten(view.getByLabelText('Guided octet 1').props.style);
 
-    expect(rowStyle.flexWrap).toBe('wrap');
-    expect(fieldStyle.minWidth).toBeGreaterThanOrEqual(64);
+    expect(rowStyle.flexWrap).toBe('nowrap');
+    expect(groupStyle).toEqual(expect.objectContaining({ flexBasis: 0, flexGrow: 1, minWidth: 0 }));
+    expect(fieldStyle.minWidth).toBe(0);
   });
 
   it('lets the learner build decimal 130 from eight binary place values', async () => {

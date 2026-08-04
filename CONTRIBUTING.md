@@ -36,7 +36,7 @@ Required before review:
 
 ```bash
 npm run check
-npm run export:native
+npm run export:web
 git diff --check
 ```
 
@@ -54,7 +54,8 @@ Do not merge backend authorization changes when the database tests could not run
 - `src/domain/` contains pure framework-independent business logic.
 - UI components may call domain functions but must not duplicate subnet answers.
 - Session secrets use Expo SecureStore.
-- Durable offline lesson events use SQLite.
+- Web Journey completion uses the versioned browser repository.
+- Native SQLite remains dormant future infrastructure.
 - Supabase service-role and email-provider credentials are server-only.
 - The client cannot assign roles, authoritative progress, or permanent badges.
 - RLS policies require explicit owner and cross-user tests.
@@ -63,7 +64,7 @@ Do not merge backend authorization changes when the database tests could not run
 
 - [ ] Behavior is covered by tests
 - [ ] `npm run check` passes
-- [ ] Relevant native/web export passes
+- [ ] Production web export passes and includes `.nojekyll`
 - [ ] Backend tests pass when schema/RLS changed
 - [ ] No secrets or personal data added
 - [ ] Documentation matches behavior

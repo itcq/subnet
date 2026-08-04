@@ -35,5 +35,12 @@ jobs:
       - name: Run project quality gate
         run: npm run check
 
-      - name: Export Android, iOS, and web bundles
-        run: npm run export:native
+      - name: Export production web artifact
+        run: npm run export:web
+
+      - name: Upload production web artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: subnet-game-web
+          path: dist
+          if-no-files-found: error

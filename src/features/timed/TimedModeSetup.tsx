@@ -51,36 +51,58 @@ export function TimedModeSetup({ onBack, onStartTimed, onStartUntimed }: TimedMo
         <Action label="START 4-MINUTE MODE" onPress={() => onStartTimed(240)} />
       </View>
 
-      <Action label="BACK" onPress={onBack} />
+      <Action label="BACK" onDark onPress={onBack} />
     </ScrollView>
   );
 }
 
-function Action({ label, onPress, primary = false }: Readonly<{ label: string; onPress: () => void; primary?: boolean }>) {
+function Action({
+  label,
+  onDark = false,
+  onPress,
+  primary = false,
+}: Readonly<{
+  label: string;
+  onDark?: boolean;
+  onPress: () => void;
+  primary?: boolean;
+}>) {
   return (
     <Pressable
       accessibilityRole="button"
       onPress={onPress}
-      style={({ pressed }) => [styles.button, primary && styles.primaryButton, pressed && styles.pressed]}>
-      <Text style={[styles.buttonText, primary && styles.primaryButtonText]}>{label}</Text>
+      style={({ pressed }) => [
+        styles.button,
+        primary && styles.primaryButton,
+        onDark && styles.onDarkButton,
+        pressed && styles.pressed,
+      ]}>
+      <Text style={[
+        styles.buttonText,
+        primary && styles.primaryButtonText,
+        onDark && styles.onDarkButtonText,
+      ]}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   content: {
+    backgroundColor: '#07111F',
     flexGrow: 1,
     gap: 16,
     padding: 20,
     paddingBottom: 40,
   },
   title: {
-    color: '#0f172a',
+    color: '#F5F8FB',
     fontSize: 30,
     fontWeight: '900',
   },
   intro: {
-    color: '#334155',
+    color: '#C8D4E0',
     fontSize: 16,
     lineHeight: 24,
   },
@@ -160,6 +182,12 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: {
     color: '#ffffff',
+  },
+  onDarkButton: {
+    borderColor: '#F6C857',
+  },
+  onDarkButtonText: {
+    color: '#F6C857',
   },
   pressed: {
     opacity: 0.7,

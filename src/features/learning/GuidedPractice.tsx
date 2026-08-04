@@ -22,6 +22,15 @@ type GuidedPracticeProps = {
   readonly scrollToTop?: (options: { animated: boolean; y: number }) => void;
 };
 
+function sanitizeOctet(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 3);
+  if (digits === '') {
+    return '';
+  }
+
+  return String(Math.min(255, Number(digits)));
+}
+
 export function GuidedPractice({ onBack, scrollToTop }: GuidedPracticeProps) {
   const scrollRef = useRef<ScrollView>(null);
   const [scenarioIndex, setScenarioIndex] = useState(0);
@@ -52,7 +61,7 @@ export function GuidedPractice({ onBack, scrollToTop }: GuidedPracticeProps) {
 
   function updateOctet(index: number, value: string) {
     setAnswerOctets((current) => current.map((octet, currentIndex) => (
-      currentIndex === index ? value.replace(/\D/g, '') : octet
+      currentIndex === index ? sanitizeOctet(value) : octet
     )));
     setFeedback(null);
   }
@@ -146,7 +155,10 @@ export function GuidedPractice({ onBack, scrollToTop }: GuidedPracticeProps) {
           <Text style={styles.answerLabel}>YOUR NETWORK ADDRESS</Text>
           <View style={styles.octetRow} testID="practice-octet-row">
             {answerOctets.map((octet, index) => (
-              <View key={index} style={styles.octetGroup}>
+              <View
+                key={index}
+                style={styles.octetGroup}
+                testID={`practice-octet-group-${index + 1}`}>
                 <TextInput
                   accessibilityLabel={`Practice answer octet ${index + 1}`}
                   editable={!solved}
@@ -290,8 +302,8 @@ const styles = StyleSheet.create({
   },
   scaffoldText: { color: '#DCE8F2', fontSize: 15, fontWeight: '700', lineHeight: 22 },
   answerLabel: { color: '#8EA6BA', fontSize: 12, fontWeight: '900', letterSpacing: 1, marginTop: 24 },
-  octetRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10, width: '100%' },
-  octetGroup: { alignItems: 'center', flexBasis: 128, flexDirection: 'row', flexGrow: 1, minWidth: 128 },
+  octetRow: { flexDirection: 'row', flexWrap: 'nowrap', gap: 4, marginTop: 10, width: '100%' },
+  octetGroup: { alignItems: 'center', flexBasis: 0, flexDirection: 'row', flexGrow: 1, minWidth: 0 },
   octetInput: {
     backgroundColor: '#0A1826',
     borderColor: '#3B5B77',
@@ -304,12 +316,12 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     fontWeight: '800',
     minHeight: 52,
-    minWidth: 64,
-    paddingHorizontal: 10,
+    minWidth: 0,
+    paddingHorizontal: 4,
     textAlign: 'center',
     WebkitTextFillColor: '#F8FAFC',
   } as never,
-  dot: { color: '#9FB2C5', fontSize: 25, fontWeight: '900', marginLeft: 6 },
+  dot: { color: '#9FB2C5', flexShrink: 0, fontSize: 20, fontWeight: '900', marginLeft: 2 },
   feedbackCard: { borderRadius: 14, borderWidth: 1, marginTop: 20, padding: 16 },
   successCard: { backgroundColor: '#12352F', borderColor: '#47E5BC' },
   retryCard: { backgroundColor: '#3A211B', borderColor: '#FF8D73' },

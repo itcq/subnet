@@ -1,4 +1,4 @@
-import { InMemoryProgressRepository } from './inMemoryProgressRepository';
+import { BrowserProgressRepository } from './browserProgressRepository';
 import type { LocalProgressRepository } from './localProgressRepository';
 
 export type ProgressRepositoryRuntime = Readonly<{
@@ -7,12 +7,20 @@ export type ProgressRepositoryRuntime = Readonly<{
   persistenceNotice: string | null;
 }>;
 
-const repository = new InMemoryProgressRepository();
+function resolveBrowserStorage(): Storage {
+  const storage = globalThis.localStorage;
+  if (storage === undefined) {
+    throw new Error('Browser storage is unavailable.');
+  }
+  return storage;
+}
+
+const repository = new BrowserProgressRepository(resolveBrowserStorage);
 const runtime: ProgressRepositoryRuntime = Object.freeze({
   repository,
-  durable: false,
+  durable: true,
   persistenceNotice:
-    'Web progress is kept only for this browser session and is cleared when the page reloads.',
+    'Journey progress is saved in this browser. It does not sync across devices yet.',
 });
 
 export function createProgressRepository(): ProgressRepositoryRuntime {

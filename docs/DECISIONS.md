@@ -1,6 +1,6 @@
 # Project Decisions
 
-**Last updated:** 2026-07-24
+**Last updated:** 2026-08-04
 
 This log records decisions that materially constrain the implementation. Change a decision explicitly rather than allowing the code and documentation to drift.
 
@@ -14,11 +14,11 @@ The application is a standalone independent project. It has no affiliation, owne
 
 ## D-002 — Expo, React Native, and TypeScript
 
-**Status:** Accepted
+**Status:** Superseded for initial distribution by D-013
 
-Build one Android/iOS codebase with Expo SDK 57, React Native, TypeScript, and Expo Router. Use EAS for cloud builds.
+Build with Expo SDK 57, React Native, TypeScript, and Expo Router while native distribution is under consideration.
 
-**Consequence:** Follow the exact Expo SDK 57 documentation and verify native/export compatibility after dependency changes.
+**Consequence:** The implementation foundation remains reusable, but current release effort follows D-013's web target.
 
 ## D-003 — Pure subnet domain engine
 
@@ -94,11 +94,27 @@ The curriculum tiers are Easy 1–100, Intermediate 101–299, Hard 300–399, a
 
 ## D-012 — Platform-specific local persistence
 
-**Status:** Accepted for the current release slice
+**Status:** Superseded for the web release by D-013 and D-014
 
-Android and iOS use one versioned Expo SQLite repository instance. Web uses an in-memory repository for the active browser session.
+Android and iOS use one versioned Expo SQLite repository instance. Web originally used an in-memory repository for the active browser session.
 
-**Consequence:** Native completion is committed before the UI shows success. Load failures provide retry. Web displays that progress is cleared on reload and makes no durable-persistence claim. Physical-device restart testing remains a merge requirement.
+**Consequence:** Native SQLite remains dormant future infrastructure. Current web behavior is governed by D-014.
+
+## D-013 — Web-first initial distribution
+
+**Status:** Accepted
+
+Ship the initial product as a responsive static web application. Mobile browser functionality is the primary design and QA constraint; tablet and desktop browsers provide the complete curriculum and Journey.
+
+**Consequence:** CI and release review export web as the production artifact. Apple and Android packaging, signing, store distribution, and native physical-device acceptance are deferred until evidence demonstrates a need. Existing Expo/native infrastructure remains dormant rather than being deleted.
+
+## D-014 — Durable same-browser Journey progress
+
+**Status:** Accepted
+
+Web Journey completion uses a versioned localStorage repository behind `LocalProgressRepository`. It survives reloads on the same browser origin but is not account-backed or cross-device synchronized.
+
+**Consequence:** The app explicitly discloses the storage scope. Malformed, unavailable, quota-limited, or unwritable storage fails closed through accessible load/save handling rather than silently clearing data. Timed scores, ranks, and badges remain session-local and unverified.
 
 ## Open decisions
 

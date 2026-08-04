@@ -49,7 +49,7 @@ function LaunchIdentity() {
 }
 
 function PersistenceNotice() {
-  if (progressRuntime.durable || progressRuntime.persistenceNotice === null) {
+  if (progressRuntime.persistenceNotice === null) {
     return null;
   }
 

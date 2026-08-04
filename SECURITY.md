@@ -63,7 +63,7 @@ Only public client configuration may use `EXPO_PUBLIC_*`. Public keys do not rep
 
 ```bash
 npm run check
-npm run export:native
+npm run export:web
 npm run backend:reset
 npm run backend:test
 git diff --check

@@ -6,6 +6,10 @@ All notable project changes are recorded here. The project has not yet published
 
 ### Added
 
+- Web-first, mobile-browser-first product target with complete desktop browser support
+- Versioned browser-local Journey persistence that survives reloads on the same origin
+- Explicit same-browser/no-cross-device-sync learner disclosure
+- Canonical `npm run export:web` production workflow
 - Deterministic, versioned catalog of 500 network-address questions with stable IDs
 - Four curriculum tiers: Easy 1–100, Intermediate 101–299, Hard 300–399, and Hardest 400–500
 - Tier-specific mask and block-size hint policies
@@ -14,7 +18,7 @@ All notable project changes are recorded here. The project has not yet published
 - Versioned Expo SQLite repository with stable question-ID/ordinal mapping
 - Progress hydration hook with retryable load failures and persistence-safe writes
 - Native route integration using one SQLite repository instance
-- Explicit session-only web progress fallback and learner-facing notice
+- Fail-closed browser storage validation and accessible load/save failure handling
 - Route, repository, hook, session, catalog, and component regression coverage
 - Expo SecureStore-backed Supabase session persistence
 - Supabase client factory configured for PKCE
@@ -25,6 +29,8 @@ All notable project changes are recorded here. The project has not yet published
 
 ### Changed
 
+- Made the web target the default development workflow and deferred native distribution
+- Reframed architecture, setup, roadmap, status, and mobile-delivery documentation around responsive web delivery
 - Replaced the five-question prototype loop with active-question rendering from the 500-question catalog
 - Changed final-question behavior from mission restart to a locked curriculum-complete state
 - Added complete post-submission instruction with mask, block size, network, and broadcast facts
@@ -46,8 +52,10 @@ All notable project changes are recorded here. The project has not yet published
 
 ### Known limitations
 
-- Native restart/resume behavior still requires a physical Android and iOS smoke test before merge
-- Web completion progress is session-only and clears on page reload
+- Browser-local progress does not sync between phones, desktops, browsers, or devices
+- Clearing site data or using storage-restricted browsing can remove or block progress
+- Physical iPhone WebKit acceptance remains separate from desktop responsive emulation
+- Native packaging and app-store distribution are deferred
 - Cloud synchronization and canonical server progress are not implemented
 
 ## Prototype checkpoint — 2026-07-17

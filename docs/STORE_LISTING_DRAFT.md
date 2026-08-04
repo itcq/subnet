@@ -1,4 +1,6 @@
-# Store listing draft
+# Store Listing Draft
+
+> **Deferred reference:** The initial product is web-only. This draft is retained solely for a possible evidence-driven native phase and is not an active release deliverable.
 
 All bracketed fields require project-owner approval before submission.
 

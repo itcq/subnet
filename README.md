@@ -1,124 +1,94 @@
 # Subnet Game
 
-A mobile-first IPv4 subnetting mastery game.
+A mobile-browser-first IPv4 subnetting learning game that also provides a complete desktop-browser experience.
 
-This is an independent standalone project with no external brand, LMS, or student-directory affiliation.
+This is an independent standalone project with no NetworkChuck, NetworkChuck Academy, LMS, or student-directory affiliation.
 
-## Current curriculum
+## Product direction
 
-The current build teaches network-address calculation through a deterministic, versioned catalog of 500 questions.
+The initial product is **web only**:
 
-Included:
+- Mobile browser functionality is the primary design and QA constraint.
+- Tablet and desktop browsers provide the same curriculum and progress path.
+- Journey completion is saved in the current browser and survives reloads.
+- Browser progress does **not** sync between a phone and desktop, between browsers, or between devices yet.
+- Apple and Android packaging is deferred unless learner demand justifies it. Existing Expo/native infrastructure remains dormant for that possible phase.
 
-- An untimed staged Journey with correct-answer-gated progression
-- An optional **Learn Subnetting** hub with multiple methods, worked examples, and curated external resources
+## Current experience
+
+- Untimed staged Journey with correct-answer-gated progression
+- Optional Learn hub with worked examples and multiple methods
+- Four-example Guided Practice with gradually reduced scaffolding
 - Optional two- and four-minute typed-answer practice
-- Hints that unlock after three incorrect timed attempts and reduce the available score only when requested
-- Session-local alpha points, personal rank bands, badges, and sharing with explicit unverified-result language
-- 500 stable network-address questions generated from a fixed seed
-- Four difficulty tiers:
-  - Easy: questions 1–100
-  - Intermediate: questions 101–299
-  - Hard: questions 300–399
-  - Hardest: questions 400–500
-- Progressive hint policies for subnet masks and block sizes
-- `/31` point-to-point and `/32` host-route edge cases in the hardest tier
-- Structured four-octet mobile input
-- Immediate correct/incorrect feedback with mask, block-size, network, and broadcast explanations
-- Correct-answer-gated advancement and tier checkpoints
-- Final completion at question 500 without wrapping back to question 1
-- Resume at the first incomplete question
-- Expo support for Android, iOS, and web
+- Local alpha points, personal rank bands, badges, and sharing with explicit unverified-result language
+- Deterministic, versioned 500-question network-address curriculum
+- Four accessible octet inputs designed for narrow mobile screens
+- Immediate misconception-specific feedback and engine-derived subnet facts
+- First-incomplete resume and final completion without wrapping
 
-The curriculum is local-first and does not require an account or network connection.
+The Journey remains untimed, with no lives, streak penalties, or pressure mechanics.
 
-## Progress persistence
+## Progress and trust boundaries
 
-- **Android and iOS:** completed questions are stored locally in SQLite. Repository, hydration, retry, and route behavior are covered by automated tests. A physical-device restart/resume smoke test is still required before merge.
-- **Web:** Journey progress and timed alpha results are stored only in memory for the current browser session and are cleared when the page reloads. The app displays this limitation directly.
-- **Timed alpha results:** points, personal rank bands, and badges are session-local and unverified on every platform. They are not a public leaderboard, credential, or competitive student ranking.
-- **Cloud sync:** not implemented. Local records are marked for future synchronization, but no server progress claim is made.
+### Journey completion
 
-## Run it
+Journey completion is stored in browser `localStorage` under a versioned payload. It survives reloads on the same browser origin.
+
+It can be lost when the learner clears site data, uses storage-restricted/private browsing, changes browser, or changes device. It is learner-controlled local practice state—not an authoritative credential.
+
+### Timed results
+
+Timed scores, personal rank bands, and badges remain session-local and unverified. They are not a public leaderboard, verified award, or competitive student ranking.
+
+### Cloud sync
+
+Accounts and cross-device progress synchronization are not implemented. The interface states this directly.
+
+## Run the web application
 
 ```bash
-npm install
+npm ci
 npm start
 ```
 
-Scan the QR code with Expo Go for early device testing, or run:
+`npm start` opens the web development target. The explicit equivalent is:
 
 ```bash
 npm run web
 ```
 
-## Quality checks
+## Quality and production export
 
 ```bash
 npm run check
-npm run export:native
+npm run export:web
 ```
 
-## Local backend foundation
+The production site uses Expo Router static output and GitHub Pages under `/subnet`.
 
-The standalone account/progress backend is developed locally with Supabase. It is configured for invite-only email authentication; no production project or student data is required.
+## Deferred native work
 
-Prerequisite: a running Docker daemon.
-
-```bash
-cp .env.example .env
-npm run backend:start
-npm run backend:reset
-npm run backend:test
-```
-
-`EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` is safe for the mobile client only when Row Level Security is enabled and tested. Never place service-role, SMTP, or email-provider secrets in an `EXPO_PUBLIC_*` variable.
-
-## Mobile builds
-
-EAS authentication and project-owned app identifiers are required before creating installable binaries.
-
-```bash
-npm run build:preview:android
-npm run build:preview:ios
-npm run build:production
-```
-
-## Documentation
-
-- [`docs/ALPHA_TESTER_GUIDE.md`](docs/ALPHA_TESTER_GUIDE.md)
-- [`docs/PROJECT_OVERVIEW.md`](docs/PROJECT_OVERVIEW.md)
-- [`docs/DEVELOPER_SETUP.md`](docs/DEVELOPER_SETUP.md)
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-- [`docs/PROJECT_STATUS.md`](docs/PROJECT_STATUS.md)
-- [`docs/DECISIONS.md`](docs/DECISIONS.md)
-- [`docs/MOBILE_ROLLOUT.md`](docs/MOBILE_ROLLOUT.md)
-- [`docs/STORE_LISTING_DRAFT.md`](docs/STORE_LISTING_DRAFT.md)
-- [`docs/ACCOUNT_PROGRESS_SECURITY_RECOMMENDATION.md`](docs/ACCOUNT_PROGRESS_SECURITY_RECOMMENDATION.md)
-- [`ROADMAP.md`](ROADMAP.md)
-- [`CHANGELOG.md`](CHANGELOG.md)
-- [`CONTRIBUTING.md`](CONTRIBUTING.md)
-- [`SECURITY.md`](SECURITY.md)
-- [`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md)
+The Expo iOS/Android configuration, SQLite repository, and EAS profiles remain in the repository as dormant future infrastructure. Native store builds, signing, physical native persistence QA, and distribution are not current release requirements.
 
 ## Structure
 
 ```text
-src/app/                         Expo Router entry points and progress hydration
-src/domain/subnet.ts             Pure subnet calculation engine
-src/domain/questions/            Deterministic 500-question catalog
-src/features/challenge/          Session engine and active challenge UI
-src/progress/                    In-memory and SQLite progress repositories
-src/auth/                        Secure session storage
-src/lib/                         Backend client factories
-supabase/                        Local backend configuration
-docs/                            Architecture, setup, and status documentation
+src/app/                         Web application shell and progress hydration
+src/domain/subnet.ts             Canonical IPv4/CIDR calculation engine
+src/domain/questions/            Deterministic curriculum catalog
+src/features/challenge/          Journey challenge flow
+src/features/learning/           Learn and Guided Practice experiences
+src/features/timed/              Optional timed practice
+src/progress/                    Browser, in-memory, and dormant native repositories
+docs/                            Architecture, setup, roadmap, and operations notes
 ```
 
 ## Product principles
 
 - Teach accuracy and reasoning before speed.
 - Explain mistakes instead of punishing them.
-- Keep practice available offline.
+- Design touch interactions for mobile browsers first.
+- Keep the full learning path usable from a desktop browser.
 - Preserve learner progress before showing completion.
-- Avoid loss-framed streaks, artificial urgency, and unnecessary student-data collection.
+- Make local, session, and future cloud state visibly distinct.
+- Avoid pressure mechanics and unnecessary personal-data collection.

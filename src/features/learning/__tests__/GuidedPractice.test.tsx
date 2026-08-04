@@ -40,20 +40,33 @@ describe('GuidedPractice', () => {
     expect(submit.props.accessibilityState).toEqual({ disabled: true });
   });
 
-  it('uses wrapping WebKit-safe numeric octet inputs with readable minimum sizes', async () => {
+  it('uses one-line WebKit-safe numeric octet inputs at narrow mobile widths', async () => {
     const view = await render(<GuidedPractice onBack={jest.fn()} />);
     const row = StyleSheet.flatten(view.getByTestId('practice-octet-row').props.style) as Record<string, unknown>;
+    const group = StyleSheet.flatten(
+      view.getByTestId('practice-octet-group-1').props.style,
+    ) as Record<string, unknown>;
     const input = view.getByLabelText('Practice answer octet 1');
     const inputStyle = StyleSheet.flatten(input.props.style) as Record<string, unknown>;
 
-    expect(row.flexWrap).toBe('wrap');
+    expect(row.flexWrap).toBe('nowrap');
+    expect(group).toEqual(expect.objectContaining({ flexBasis: 0, flexGrow: 1, minWidth: 0 }));
     expect(input.props.inputMode).toBe('numeric');
     expect(input.props.keyboardType).toBe('number-pad');
     expect(input.props.selectTextOnFocus).toBeFalsy();
-    expect(inputStyle.minWidth).toBe(64);
+    expect(inputStyle.minWidth).toBe(0);
     expect(inputStyle.minHeight).toBeGreaterThanOrEqual(52);
     expect(inputStyle.WebkitTextFillColor).toBe('#F8FAFC');
     expect(inputStyle.caretColor).toBe('#F6C857');
+  });
+
+  it('strips non-digits and clamps each practice octet to 255', async () => {
+    const view = await render(<GuidedPractice onBack={jest.fn()} />);
+    const firstOctet = view.getByLabelText('Practice answer octet 1');
+
+    await fireEvent.changeText(firstOctet, '2a56');
+
+    expect(firstOctet.props.value).toBe('255');
   });
 
   it('shows only the mask on stage 2 so the learner must derive block size', async () => {

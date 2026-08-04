@@ -12,7 +12,6 @@ export default function RootHtml({ children }: PropsWithChildren) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
         <meta name="robots" content="noindex,nofollow,noarchive" />
-        <title>Subnet Game Alpha</title>
         <ScrollViewStyleReset />
       </head>
       <body>{children}</body>
