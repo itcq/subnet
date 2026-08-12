@@ -1,85 +1,108 @@
-# Account Privacy Notice
+# Privacy Notice
 
-**Status:** Prepared for production review; do not publish or enable accounts until every bracketed field is completed.
+**Effective date:** August 12, 2026
 
-**Effective date:** [EFFECTIVE DATE]
+**Operator:** Zach Hill
 
-## What the optional account does
+**Privacy contact:** [zach@itcareerquestions.com](mailto:zach@itcareerquestions.com)
 
-The Subnet Game works without an account. Anonymous Journey progress remains in the learner's browser and is never uploaded by account synchronization.
+This Privacy Notice explains how the Standalone Subnetting App (the **App**) collects, uses, stores, and handles information when you use the App or create an optional account.
 
-A learner may optionally create an account with a verified email address. While signed in, the learner can choose when to synchronize completed Journey challenges across browsers or devices. Synchronization is manual, not continuous.
+The App is an independent project. It is not affiliated with or operated by NetworkChuck or NetworkChuck Academy.
 
-## Data collected
+## 1. Information we collect
 
-The account service processes only:
+You may use the App without creating an account. Anonymous progress remains in your browser and is not uploaded by account synchronization.
 
-- Verified email address
-- Managed account/user ID
-- Account creation timestamp
-- Catalog fingerprint
-- Completed question ordinal
-- Learner-reported completion timestamp
-- Database row creation timestamp
-- Authentication, delivery, security, and abuse-prevention logs maintained by the configured providers
+If you choose to create an account, we may collect and process information necessary to provide account functionality, including:
 
-The account system does not collect typed subnet answers, timed-mode scores, anonymous browser progress, marketing consent, payment data, or an Academy/LMS identity.
+- Your verified email address
+- Your managed account/user ID
+- Your account creation timestamp
+- Progress associated with your account, including the catalog version, completed-question ordinal, learner-reported completion timestamp, and database row creation timestamp
+- Authentication, email-delivery, security, and abuse-prevention information maintained by our service providers
 
-## Why the data is used
+The account system does not collect typed subnet answers, timed-mode scores, anonymous browser progress, marketing consent, payment data, or an Academy or learning-management-system identity.
 
-Account data is used to:
+## 2. How we use your information
 
-- Authenticate the learner with a one-time email code
-- Store and return manually synchronized Journey completion
-- Protect accounts and investigate delivery or abuse problems
-- Provide authenticated self-service export and deletion
+We use account information to:
 
-Registration does not subscribe the learner to marketing email.
+- Create and maintain your optional account
+- Authenticate you using a one-time email code
+- Store and return progress that you manually choose to synchronize
+- Restore authenticated account sessions
+- Provide account-data download functionality
+- Process account-deletion requests
+- Maintain the security and reliability of the App
+- Prevent abuse and unauthorized access
 
-## Storage and providers
+Creating an account does not subscribe you to marketing email. We do not use account information for purposes unrelated to operating the App unless this Privacy Notice is updated to explain those uses.
 
-Account and synchronized-progress data is hosted in the project-owned Supabase environment. Authentication email is delivered by the approved project-owned email provider.
+## 3. Account authentication
 
-Before publication, identify the providers here:
+The App uses email-based authentication. A one-time password or verification code is sent to the email address associated with your account.
 
-- Database/authentication provider: [SUPABASE PROJECT OWNER/REGION]
-- Authentication email provider: [EMAIL PROVIDER]
-- Operational monitoring provider: [MONITORING PROVIDER]
+Authentication email is delivered by **Resend**.
 
-## Retention
+## 4. Service providers
 
-Account and manually synchronized progress data is retained while the account exists. The learner can permanently delete the account at any time from the account screen.
+We use third-party service providers to operate portions of the App:
 
-Security, email-delivery, and abuse-prevention logs may have separate provider-controlled retention periods. Record those periods before launch: [LOG RETENTION PERIODS].
+- **Supabase** — database, account authentication, and related backend services
+- **Resend** — delivery of account-authentication and one-time-password emails
 
-No automatic inactive-account deletion is promised. If an inactivity policy is introduced later, update this notice and provide reasonable advance notice before deleting learner data.
+These providers may process information as necessary to provide their services to the App. They may maintain authentication, delivery, security, and abuse-prevention logs under their own service terms and retention practices.
 
-## Export and deletion
+We will update this Privacy Notice if an additional provider processes personal information on behalf of the App.
 
-A signed-in learner can download a versioned JSON export from the account screen. The export includes account metadata and synchronized completion rows.
+## 5. Data retention
 
-A signed-in learner can permanently delete the account after typing `DELETE`. The database verifies that the requesting authenticated user owns the account. Deletion removes the managed authentication account and cascades through the app-owned profile and synchronized-progress rows. After successful deletion, the app removes that account's browser cache. Anonymous browser progress remains untouched.
+Account-associated data and manually synchronized progress are retained while your account exists. The App does not currently promise automatic deletion after a period of inactivity.
 
-Deletion is intended to be permanent and cannot be undone. Provider backups may age out according to the documented provider backup-retention schedule: [BACKUP RETENTION PERIOD].
+You may permanently delete your account from the account screen. Account deletion removes the managed authentication account and the App-owned profile and synchronized-progress records associated with that account.
 
-## Learner choices
+Provider logs and backups may remain temporarily according to the service providers' retention and backup practices before aging out.
 
-Learners may:
+Anonymous progress is separate from registered-account data. Deleting an account does not delete anonymous progress stored in your browser.
 
-- Use the game anonymously without creating an account
-- Choose when to synchronize signed-in completion
-- Download their account data
-- Delete their account
-- Contact the project about a privacy or account-data concern
+## 6. Your choices and account controls
 
-## Contact
+Registered users can:
 
-Data controller/legal owner: [LEGAL OWNER]
+- Sign out of their account
+- Choose when to synchronize account progress
+- Download their account data in a versioned JSON file
+- Permanently delete their account after a deliberate confirmation step
 
-Privacy contact: [PRIVACY EMAIL OR FORM]
+An account-data download contains only information associated with the authenticated user's account. Account deletion removes only the requesting user's account and associated account data.
 
-Project jurisdiction/address, if required: [JURISDICTION/ADDRESS]
+## 7. Children
 
-## Important trust boundary
+Users must be at least 13 years old to create an account.
 
-Synchronized completion is learner-reported practice continuity. It is not verified mastery, an exam result, employment evidence, or an authoritative credential.
+The App does not provide a parental or guardian consent process for account creation by children under 13. Users under 13 are therefore not permitted to create an account.
+
+## 8. Security
+
+We use reasonable technical and organizational measures designed to protect account information from unauthorized access, modification, disclosure, or deletion.
+
+No method of electronic storage or transmission is completely secure, and we cannot guarantee absolute security.
+
+## 9. Changes to this Privacy Notice
+
+We may update this Privacy Notice when the App, its account functionality, service providers, or data practices change.
+
+When material changes are made, the effective date at the top of this notice will be updated.
+
+## 10. Contact
+
+Questions or requests concerning this Privacy Notice or your account information may be sent to:
+
+**Zach Hill**
+
+Email: [zach@itcareerquestions.com](mailto:zach@itcareerquestions.com)
+
+## 11. Governing jurisdiction
+
+This Privacy Notice and the operation of the App are governed by the applicable laws of **Illinois, United States**.
