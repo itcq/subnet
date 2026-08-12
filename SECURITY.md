@@ -2,7 +2,9 @@
 
 ## Current support status
 
-This project is a public static web application. It has no account system, application backend, cloud progress synchronization, payment flow, or authoritative credential system. Journey progress is stored in the learner's browser.
+Released v1.0.0 is a public static web application with browser-local Journey progress. Its production build has no configured account backend, cloud synchronization, payment flow, or authoritative credential system.
+
+The current development worktree contains an optional, fail-closed Supabase account and manual progress-synchronization implementation. It remains unavailable unless valid public backend configuration is supplied. Anonymous browser progress is never uploaded. Signed-in completions use an account-specific browser namespace and synchronize only after a separate learner action. This capability is not production-ready until every backend, privacy, data-lifecycle, and physical-device gate below passes.
 
 ## Reporting a security issue
 
@@ -26,7 +28,8 @@ Only public client configuration may use `EXPO_PUBLIC_*`. Public keys do not rep
 ## Authentication rules
 
 - Use managed authentication.
-- Store managed session material in Expo SecureStore.
+- On web, keep managed session material in `sessionStorage` so it is scoped to the current browser tab/session rather than durable shared-browser storage.
+- If native account support is introduced, store managed session material in Expo SecureStore.
 - Rotate/revoke sessions through the provider.
 - Use exact callback allowlists.
 - Rate-limit authentication endpoints.
@@ -43,18 +46,19 @@ Only public client configuration may use `EXPO_PUBLIC_*`. Public keys do not rep
 
 ## Progress and badge integrity
 
-- The client submits immutable attempt evidence, not badge claims.
-- The server recomputes correctness against known challenge/version data.
-- UUID/idempotency and canonical payload hashes protect offline retries.
-- Progress projections are rebuildable from attempts.
-- Badge definitions and awards are versioned and uniquely constrained.
+- Current account synchronization stores self-reported completed Journey ordinals. It is practice continuity, not verified mastery, a credential, or an authoritative badge.
+- Remote completion rows are append-only and tied to the immutable catalog fingerprint.
+- Account synchronization uses one atomic database RPC that rejects unless the initiating expected user ID still equals `auth.uid()`; direct authenticated client access to the progress table is revoked.
+- Anonymous browser progress is never read or uploaded by account synchronization.
+- Timed scores, local rank bands, and local badges remain unsynchronized and unverified.
+- Any future verified awards require server-side correctness validation and separate security review.
 
 ## Privacy rules
 
 - Collect the minimum data required for identity, progress, support, and approved communication.
 - Use synthetic fixtures only during development.
 - Optional email categories default off.
-- Define retention, export, and deletion behavior before real-user onboarding.
+- Retain account and synchronized-progress rows while the account exists; provide authenticated self-service JSON export and permanent account deletion. Document provider log/backup retention before onboarding.
 - Keep badges and individual progress private by default.
 
 ## Required checks before release
@@ -66,15 +70,25 @@ npm run verify:release
 git diff --check
 ```
 
-Also verify the exact static artifact, single-route HTML allowlist, browser-local progress reload, mobile input behavior, crawler metadata, absence of source maps/secrets, and production byte parity. Backend, account, and native-app security gates become mandatory only if those deferred capabilities are introduced.
+Also verify the exact static artifact, single-route HTML allowlist, browser-local progress reload, mobile input behavior, crawler metadata, absence of source maps/secrets, and production byte parity.
+
+Before enabling accounts in production, additionally require:
+
+- Real PostgreSQL execution of the complete pgTAP authorization suite
+- Two-user RLS isolation and cross-user mutation denial
+- Configured OTP, session expiry, sign-out, account switching, and manual-sync E2E
+- Project-owned SMTP, allowed origins, authentication rate limits, and delivery monitoring
+- Completed and published privacy notice, provider log/backup retention, and production verification of authenticated export/deletion
+- Physical iPhone Safari/WebKit acceptance
+- CAPTCHA challenge-token integration before CAPTCHA is enabled
 
 ## Dependency findings
 
-A July 26, 2026 `npm audit --omit=dev` reports 36 affected dependency paths (25 high, 11 moderate), but those paths collapse to two underlying transitive advisories:
+An August 11, 2026 `npm audit --omit=dev` reports 23 affected dependency paths (15 high, 8 moderate), but those paths collapse to three underlying transitive advisories:
 
-- **GHSA-mh99-v99m-4gvg (`brace-expansion`)** — denial of service when attacker-controlled brace/glob input is expanded inside a Node process. In this project it is reached through Jest/ESLint globbing and Expo fingerprint/build tooling. The web application accepts no user-provided file or glob patterns, GitHub Pages runs no project Node process, and this package is not an application import.
+- **GHSA-w3rx-r6r6-pgpr and GHSA-5p2g-fcmc-qvqq (`image-size`)** — denial of service in ICNS, JXL, and HEIF parsers. Expo SDK 57 reaches `image-size` through Metro build tooling. The public application does not accept learner-supplied image files, and `image-size` is not an application import.
 - **GHSA-w5hq-g745-h8pq (`uuid`)** — missing output-buffer bounds checks in UUID v3/v5/v6. The dependency is reached only through the Node-based `xcode` config plugin, whose installed call site uses `uuid.v4()` without a caller-provided buffer. The application does not import `uuid`.
 
-These findings are assessed as **not reachable in the static web runtime**. They remain present in the build dependency tree and must be reassessed when compatible Expo updates are available and before distributing native production builds. Do not force npm's suggested Expo/Jest downgrades; they are semver-major, SDK-incompatible remediations.
+These findings are assessed as **not reachable in the static web runtime**. They remain present in the build dependency tree and must be reassessed when compatible Expo updates are available and before distributing native production builds. npm's forced remediation would downgrade Expo SDK 57 to Expo SDK 53 and is rejected as a breaking, SDK-incompatible change.
 
 For each web release, export the exact reviewed tree and verify that neither advisory package is present in the emitted browser artifact. This is a scoped reachability assessment, not a claim that the dependency tree is vulnerability-free.

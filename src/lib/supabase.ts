@@ -9,10 +9,19 @@ type SupabasePublicConfig = {
   publishableKey: string;
 };
 
-export function createSupabaseClient({
-  url,
-  publishableKey,
-}: SupabasePublicConfig) {
+type SessionStorage = Readonly<{
+  getItem(key: string): Promise<string | null> | string | null;
+  setItem(key: string, value: string): Promise<void> | void;
+  removeItem(key: string): Promise<void> | void;
+}>;
+
+export function createSupabaseClient(
+  {
+    url,
+    publishableKey,
+  }: SupabasePublicConfig,
+  sessionStorage: SessionStorage = secureSessionStorage,
+) {
   if (!url || !publishableKey) {
     throw new Error('Supabase public configuration is missing');
   }
@@ -23,7 +32,7 @@ export function createSupabaseClient({
       detectSessionInUrl: false,
       flowType: 'pkce',
       persistSession: true,
-      storage: secureSessionStorage,
+      storage: sessionStorage,
     },
   });
 }

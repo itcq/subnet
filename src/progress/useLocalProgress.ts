@@ -19,6 +19,8 @@ export type LocalProgressState = Readonly<{
   failure: ProgressFailure | null;
   error: Error | null;
   retry(): void;
+  refresh(): void;
+  adoptCompletedOrdinals(ordinals: readonly number[]): void;
 }>;
 
 export type ProgressFailure = Readonly<{
@@ -86,6 +88,13 @@ export function useLocalProgress(
 
     failureKind.current = null;
     setFailure(null);
+  }, []);
+
+  const refresh = useCallback(() => {
+    failureKind.current = null;
+    setFailure(null);
+    setLoading(true);
+    setLoadAttempt((attempt) => attempt + 1);
   }, []);
 
   useEffect(() => {
@@ -194,6 +203,27 @@ export function useLocalProgress(
     [canRecordCompletion, catalogVersion, context, repository],
   );
 
+  const adoptCompletedOrdinals = useCallback(
+    (ordinals: readonly number[]) => {
+      if (activeContext.current !== context) {
+        throw new Error('Local progress context changed.');
+      }
+      if (
+        ordinals.some(
+          (ordinal) => !Number.isInteger(ordinal) || ordinal < 1 || ordinal > 500,
+        )
+      ) {
+        throw new Error('Synchronized progress is invalid.');
+      }
+      failureKind.current = null;
+      setFailure(null);
+      setCompletedOrdinals(
+        Object.freeze([...new Set(ordinals)].sort((a, b) => a - b)),
+      );
+    },
+    [context],
+  );
+
   return {
     loading: hydrationIsCurrent ? loading : true,
     completedOrdinals: hydrationIsCurrent
@@ -203,5 +233,7 @@ export function useLocalProgress(
     failure: hydrationIsCurrent ? failure : null,
     error: hydrationIsCurrent ? failure?.error ?? null : null,
     retry,
+    refresh,
+    adoptCompletedOrdinals,
   };
 }

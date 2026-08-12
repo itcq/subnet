@@ -4,26 +4,34 @@
 
 ## Current system
 
+Released v1.0.0 uses the anonymous path below. The current development worktree also contains the optional, fail-closed account path shown beside it.
+
 ```text
 Mobile / tablet / desktop browser
               │
               ▼
-┌─────────────────────────────────────────────┐
-│ Expo Router static web application          │
-│                                             │
-│ UI ──> deterministic curriculum             │
-│  │          │                               │
-│  │          └──> canonical subnet engine    │
-│  │                                          │
-│  └──> BrowserProgressRepository             │
-│          └──> versioned localStorage        │
-└─────────────────────────────────────────────┘
-              │
-              ▼
-GitHub Pages at /subnet
+┌─────────────────────────────────────────────────────────┐
+│ Expo Router static web application                      │
+│                                                         │
+│ UI ──> deterministic curriculum ──> subnet engine       │
+│  │                                                      │
+│  ├──> anonymous BrowserProgressRepository               │
+│  │      └──> localStorage key                           │
+│  │          subnet-game:journey-progress:v1             │
+│  │                                                      │
+│  └──> optional verified-email account                   │
+│         ├──> sessionStorage Supabase session            │
+│         ├──> account localStorage namespace by user ID  │
+│         └──> explicit manual synchronization            │
+└───────────────────────────┬─────────────────────────────┘
+                            │ HTTPS / loopback HTTP only
+                            ▼
+                  Supabase Auth + Postgres
+                  ├── RLS-protected profiles/progress
+                  └── atomic expected-user sync RPC
 ```
 
-The initial product has no required application backend, account, or cloud synchronization path.
+The application never requires an account for anonymous learning. Without a valid Supabase URL, publishable key, and HTTPS privacy-notice URL, the account path is unavailable and no registration request is initiated. Released production v1.0.0 remains on the anonymous path only.
 
 ## Product target
 
@@ -60,7 +68,11 @@ Web Journey storage adapter behind `LocalProgressRepository`.
 
 ### `src/progress/createProgressRepository.ts`
 
-Web/base factory. Creates one durable browser repository and discloses that progress does not sync across devices.
+Web/base factory. Creates the anonymous browser repository and account-specific repositories. Anonymous progress uses `subnet-game:journey-progress:v1`; signed-in repositories use a separate user-ID-derived namespace. Signing out changes the active repository back to anonymous without deleting either namespace.
+
+### Optional account synchronization
+
+`src/auth/` implements fail-closed passwordless Supabase Auth. Web session material is intentionally stored in `sessionStorage`; closing that tab ends restoration from that tab's storage. `src/progress/accountProgressSync.ts` reads only the active account repository and calls one `sync_account_progress` RPC with the initiating user ID. PostgreSQL checks that value against `auth.uid()` before inserts and returns that account's complete catalog snapshot in the same transaction. Anonymous progress is never passed into this path.
 
 ### Dormant native adapters
 
@@ -105,6 +117,6 @@ At every width, interactive controls must remain visible, octet inputs must not 
 - `.nojekyll` required
 - production title, description, canonical URL, and public crawler access support discovery
 
-## Future cross-device sync
+## Account synchronization enablement
 
-Cross-device continuity requires an account and trusted backend. If demand justifies it, add that as a separate security-reviewed vertical slice. Do not reinterpret local browser storage as cloud sync.
+The development worktree implements optional account continuity as a separate security-reviewed vertical slice. Production enablement still requires real PostgreSQL authorization tests, configured OTP/two-account lifecycle E2E, approved privacy and data-lifecycle operations, project-owned authentication safeguards, and physical iPhone WebKit acceptance. Do not reinterpret anonymous local browser storage as cloud sync.

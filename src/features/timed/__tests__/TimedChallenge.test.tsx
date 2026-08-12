@@ -9,7 +9,7 @@ import { TimedChallenge } from '../TimedChallenge';
 const question: SubnetQuestion = {
   id: 'timed-fixture',
   ordinal: 1,
-  catalogVersion: 'ipv4-network-v1',
+  catalogVersion: '17dd300a',
   tier: 'easy',
   type: 'network-address',
   ip: '10.20.30.200',

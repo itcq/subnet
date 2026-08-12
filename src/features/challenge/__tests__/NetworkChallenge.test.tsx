@@ -16,7 +16,7 @@ function question(
   return {
     id: `fixture-${ordinal}`,
     ordinal,
-    catalogVersion: 'ipv4-network-v1',
+    catalogVersion: '17dd300a',
     tier,
     type: 'network-address',
     ip,

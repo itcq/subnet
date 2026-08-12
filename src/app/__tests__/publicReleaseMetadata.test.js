@@ -60,6 +60,32 @@ describe('public release metadata', () => {
     expect(projectStatus).toContain('https://itcq.github.io/subnet/');
   });
 
+  it('keeps current-state documents aligned with the production-blocked account slice', () => {
+    const currentStateDocs = [
+      'docs/PROJECT_OVERVIEW.md',
+      'docs/PROJECT_STATUS.md',
+      'docs/ALPHA_TESTER_GUIDE.md',
+      'docs/ARCHITECTURE.md',
+    ];
+
+    for (const document of currentStateDocs) {
+      const content = readProjectFile(document);
+      expect(content).not.toMatch(/accounts do not exist/i);
+      expect(content).not.toMatch(/no account or cross-device synchronization/i);
+      expect(content).not.toMatch(/registration or sign-in ui\s*$/im);
+    }
+
+    expect(readProjectFile('docs/PROJECT_OVERVIEW.md')).toContain(
+      'implemented but production-blocked optional account slice',
+    );
+    expect(readProjectFile('docs/PROJECT_STATUS.md')).toContain(
+      'implemented but production-blocked optional account slice',
+    );
+    expect(readProjectFile('docs/ALPHA_TESTER_GUIDE.md')).toContain(
+      'implemented but production-blocked optional account slice',
+    );
+  });
+
   it('clears persistent bundler state for canonical production exports', () => {
     const packageJson = JSON.parse(readProjectFile('package.json'));
 

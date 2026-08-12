@@ -12,17 +12,46 @@ const mockRepository: LocalProgressRepository = {
   listCompleted: jest.fn(),
   recordCompletion: jest.fn(),
 };
+const mockAccountRepository: LocalProgressRepository = {
+  initialize: jest.fn().mockResolvedValue(undefined),
+  listCompleted: jest.fn().mockResolvedValue([]),
+  recordCompletion: jest.fn().mockResolvedValue(undefined),
+};
+const mockRefresh = jest.fn();
+const mockAdoptCompletedOrdinals = jest.fn();
 const mockRetry = jest.fn();
 const mockRecordCompletion = jest.fn<Promise<void>, [unknown]>();
 const mockNetworkChallenge = jest.fn((_props: unknown) => null);
 const mockGuidedPractice = jest.fn((_props: unknown) => null);
 const mockTimedChallenge = jest.fn((_props: unknown) => null);
+const mockAccountRegistration = jest.fn((_props: unknown) => null);
+
 const mockBackHandlerRemove = jest.fn();
 let mockHardwareBackPress: (() => boolean | null | undefined) | undefined;
 const mockRuntime = {
   repository: mockRepository,
   durable: true,
   persistenceNotice: null as string | null,
+};
+const mockProgressGateway = {
+  syncCompleted: jest.fn().mockResolvedValue([]),
+};
+const mockAccountRuntime = {
+  configured: false,
+  dataService: null as null | {
+    deleteOwnAccount(userId: string): Promise<void>;
+    exportAccountData(userId: string): Promise<unknown>;
+  },
+  privacyNoticeUrl: null as string | null,
+  progressGateway: null as typeof mockProgressGateway | null,
+  service: null as null | {
+    clearDeletedAccountSession?(expectedUserId: string): Promise<boolean>;
+    getCurrentAccount(): Promise<{ userId: string; email: string } | null>;
+    signOut?(): Promise<void>;
+    subscribeToAccountChanges?(
+      listener: (identity: { userId: string; email: string } | null) => void,
+    ): () => void;
+  },
 };
 let mockProgressState = {
   loading: true,
@@ -31,9 +60,13 @@ let mockProgressState = {
   failure: null as null | { kind: 'load' | 'save'; error: Error },
   error: null as Error | null,
   retry: mockRetry,
+  adoptCompletedOrdinals: mockAdoptCompletedOrdinals,
+  refresh: mockRefresh,
 };
 
 jest.mock('@/progress/createProgressRepository', () => ({
+  clearAccountProgressRepository: jest.fn(),
+  createAccountProgressRepository: jest.fn(() => mockAccountRepository),
   createProgressRepository: jest.fn(() => mockRuntime),
 }));
 
@@ -63,6 +96,21 @@ jest.mock('@/features/learning/GuidedPractice', () => {
   };
 });
 
+jest.mock('@/auth/accountRuntime', () => ({
+  createPublicAccountRuntime: jest.fn(() => mockAccountRuntime),
+}));
+
+jest.mock('@/features/account/AccountRegistration', () => {
+  const ReactModule = require('react');
+  const { View } = require('react-native');
+  return {
+    AccountRegistration: (props: unknown) => {
+      mockAccountRegistration(props);
+      return ReactModule.createElement(View, { testID: 'account-registration' });
+    },
+  };
+});
+
 jest.mock('@/features/timed/TimedChallenge', () => {
   const ReactModule = require('react');
   const { View } = require('react-native');
@@ -75,13 +123,17 @@ jest.mock('@/features/timed/TimedChallenge', () => {
 });
 
 import { CATALOG_VERSION, subnetQuestionCatalog } from '@/domain/questions/catalog';
-import { createProgressRepository } from '@/progress/createProgressRepository';
+import {
+  clearAccountProgressRepository,
+  createAccountProgressRepository,
+  createProgressRepository,
+} from '@/progress/createProgressRepository';
 import { useLocalProgress } from '@/progress/useLocalProgress';
 
 const HomeScreen = require('../index').default as typeof import('../index').default;
 
 const WEB_NOTICE =
-  'Journey progress is saved in this browser. It does not sync across devices yet.';
+  'Journey progress is saved in this browser unless you sign in and choose to sync it.';
 const TAGLINE = 'Learn subnetting one short lesson at a time.';
 
 jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_eventName, handler) => {
@@ -97,7 +149,9 @@ function hydrated(overrides: Partial<typeof mockProgressState> = {}) {
     failure: null,
     error: null,
     retry: mockRetry,
+    adoptCompletedOrdinals: mockAdoptCompletedOrdinals,
     ...overrides,
+    refresh: overrides.refresh ?? mockRefresh,
   };
 }
 
@@ -107,15 +161,29 @@ async function startJourney(screen: Awaited<ReturnType<typeof render>>) {
 
 describe('HomeScreen launch and menu flow', () => {
   beforeEach(() => {
+    mockRefresh.mockClear();
+    mockAdoptCompletedOrdinals.mockClear();
     mockRetry.mockClear();
     mockRecordCompletion.mockReset();
     mockNetworkChallenge.mockClear();
     mockGuidedPractice.mockClear();
     mockTimedChallenge.mockClear();
+    mockAccountRegistration.mockClear();
+    jest.mocked(clearAccountProgressRepository).mockReset();
+    mockAccountRuntime.configured = false;
+    mockAccountRuntime.dataService = null;
+    mockAccountRuntime.privacyNoticeUrl = null;
+    mockAccountRuntime.progressGateway = null;
+    mockAccountRuntime.service = null;
+    mockProgressGateway.syncCompleted.mockReset().mockResolvedValue([]);
+    jest.mocked(mockAccountRepository.initialize).mockReset().mockResolvedValue(undefined);
+    jest.mocked(mockAccountRepository.listCompleted).mockReset().mockResolvedValue([]);
+    jest.mocked(mockAccountRepository.recordCompletion).mockReset().mockResolvedValue(undefined);
     mockBackHandlerRemove.mockClear();
     mockHardwareBackPress = undefined;
     jest.mocked(BackHandler.addEventListener).mockClear();
     jest.mocked(useLocalProgress).mockClear();
+    jest.mocked(createAccountProgressRepository).mockClear();
     mockRuntime.durable = true;
     mockRuntime.persistenceNotice = null;
     mockProgressState = {
@@ -125,6 +193,8 @@ describe('HomeScreen launch and menu flow', () => {
       failure: null,
       error: null,
       retry: mockRetry,
+      adoptCompletedOrdinals: mockAdoptCompletedOrdinals,
+      refresh: mockRefresh,
     };
   });
 
@@ -179,6 +249,243 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByRole('button', { name: 'VIEW JOURNEY' })).toBeTruthy();
     expect(screen.queryByText(/500/)).toBeNull();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
+  });
+
+  it('opens optional account registration without blocking anonymous play', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    expect(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
+
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }),
+    );
+
+    expect(screen.getByTestId('account-registration')).toBeTruthy();
+    expect(mockAccountRegistration).toHaveBeenCalledWith(
+      expect.objectContaining({
+        service: null,
+        onBack: expect.any(Function),
+        onSyncProgress: null,
+      }),
+    );
+  });
+
+  it('switches to account-owned progress, adopts sync results, and restores anonymous state on sign out', async () => {
+    hydrated();
+    mockAccountRuntime.configured = true;
+    mockAccountRuntime.progressGateway = mockProgressGateway;
+    jest.mocked(mockRepository.initialize).mockResolvedValue(undefined);
+    jest.mocked(mockRepository.listCompleted).mockResolvedValue([]);
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }),
+    );
+
+    type AccountProps = Readonly<{
+      onBack(): void;
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+      onSyncProgress: null | (() => Promise<{
+        completedOrdinals: readonly number[];
+        localCount: number;
+        remoteCount: number;
+      }>);
+    }>;
+    let props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+    await act(async () => {
+      props.onIdentityChange({ userId: 'user-123', email: 'learner@example.com' });
+    });
+
+    expect(createAccountProgressRepository).toHaveBeenCalledWith('user-123');
+    expect(useLocalProgress).toHaveBeenLastCalledWith(
+      mockAccountRepository,
+      CATALOG_VERSION,
+    );
+    props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+    expect(props.onSyncProgress).not.toBeNull();
+    await expect(props.onSyncProgress?.()).resolves.toEqual({
+      completedOrdinals: [],
+      localCount: 0,
+      remoteCount: 0,
+    });
+    expect(mockAdoptCompletedOrdinals).toHaveBeenCalledWith([]);
+    expect(mockRefresh).not.toHaveBeenCalled();
+
+    await act(async () => props.onBack());
+    expect(screen.getByRole('button', { name: 'ACCOUNT: learner@example.com' })).toBeTruthy();
+
+    await act(async () => props.onIdentityChange(null));
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+  });
+
+  it('reports confirmed backend deletion as successful even when local cleanup fails', async () => {
+    hydrated();
+    const deleteOwnAccount = jest.fn().mockResolvedValue(undefined);
+    const signOut = jest.fn().mockRejectedValue(new Error('session already removed'));
+    const clearDeletedAccountSession = jest.fn().mockRejectedValue(new Error('session cleanup unavailable'));
+    mockAccountRuntime.configured = true;
+    mockAccountRuntime.dataService = {
+      deleteOwnAccount,
+      exportAccountData: jest.fn(),
+    };
+    mockAccountRuntime.service = {
+      clearDeletedAccountSession,
+      getCurrentAccount: jest.fn().mockResolvedValue(null),
+      signOut,
+    };
+    jest.mocked(clearAccountProgressRepository).mockImplementation(() => {
+      throw new Error('storage unavailable');
+    });
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    type AccountProps = Readonly<{
+      onDeleteAccount: null | ((identity: { userId: string; email: string }) => Promise<void>);
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+    }>;
+    let props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+    await act(async () => props.onIdentityChange({ userId: 'user-123', email: 'learner@example.com' }));
+    props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+
+    await expect(props.onDeleteAccount?.({
+      userId: 'user-123',
+      email: 'learner@example.com',
+    })).resolves.toBeUndefined();
+    expect(deleteOwnAccount).toHaveBeenCalledWith('user-123');
+    expect(jest.mocked(clearAccountProgressRepository)).toHaveBeenCalledWith('user-123');
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('does not sign out a newer account after confirmed deletion of the initiating account', async () => {
+    hydrated();
+    let finishDeletion!: () => void;
+    const deleteOwnAccount = jest.fn(() => new Promise<void>((resolve) => {
+      finishDeletion = resolve;
+    }));
+    const signOut = jest.fn().mockResolvedValue(undefined);
+    const clearDeletedAccountSession = jest.fn().mockResolvedValue(false);
+    mockAccountRuntime.configured = true;
+    mockAccountRuntime.dataService = {
+      deleteOwnAccount,
+      exportAccountData: jest.fn(),
+    };
+    mockAccountRuntime.service = {
+      clearDeletedAccountSession,
+      getCurrentAccount: jest.fn().mockResolvedValue(null),
+      signOut,
+    };
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    type AccountProps = Readonly<{
+      onDeleteAccount: null | ((identity: { userId: string; email: string }) => Promise<void>);
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+    }>;
+    let props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+    await act(async () => props.onIdentityChange({ userId: 'user-123', email: 'one@example.com' }));
+    props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+    const deletion = props.onDeleteAccount?.({ userId: 'user-123', email: 'one@example.com' });
+    await act(async () => props.onIdentityChange({ userId: 'user-456', email: 'two@example.com' }));
+    await act(async () => finishDeletion());
+
+    await expect(deletion).resolves.toBeUndefined();
+    expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it('does not adopt an in-flight sync result after account ownership changes', async () => {
+    hydrated();
+    mockAccountRuntime.configured = true;
+    mockAccountRuntime.progressGateway = mockProgressGateway;
+    let resolveRemote!: (rows: readonly []) => void;
+    mockProgressGateway.syncCompleted.mockImplementation(() => new Promise((resolve) => {
+      resolveRemote = resolve;
+    }));
+    jest.mocked(mockAccountRepository.listCompleted).mockResolvedValue([]);
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+
+    type AccountProps = Readonly<{
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+      onSyncProgress: null | (() => Promise<unknown>);
+    }>;
+    let props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+    await act(async () => props.onIdentityChange({
+      userId: 'user-123',
+      email: 'learner@example.com',
+    }));
+    props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
+    const syncPromise = props.onSyncProgress?.();
+    const syncExpectation = expect(syncPromise).rejects.toThrow(
+      'Account changed while progress was syncing.',
+    );
+
+    await act(async () => props.onIdentityChange(null));
+    await act(async () => resolveRemote([]));
+    await syncExpectation;
+    expect(mockAdoptCompletedOrdinals).not.toHaveBeenCalled();
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+  });
+
+  it('does not let a stale startup restore reactivate an account after sign out', async () => {
+    hydrated();
+    mockAccountRuntime.configured = true;
+    let resolveRestore: ((identity: { userId: string; email: string }) => void) | undefined;
+    mockAccountRuntime.service = {
+      getCurrentAccount: jest.fn(() => new Promise<{
+        userId: string;
+        email: string;
+      } | null>((resolve) => {
+        resolveRestore = resolve;
+      })),
+    };
+
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(
+      screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }),
+    );
+    const props = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+    }>;
+
+    await act(async () => props.onIdentityChange(null));
+    await act(async () => resolveRestore?.({
+      userId: 'stale-user',
+      email: 'stale@example.com',
+    }));
+
+    expect(createAccountProgressRepository).not.toHaveBeenCalledWith('stale-user');
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+  });
+
+  it('returns to anonymous progress when authentication expires externally', async () => {
+    hydrated();
+    mockAccountRuntime.configured = true;
+    let authStateListener:
+      | ((identity: { userId: string; email: string } | null) => void)
+      | undefined;
+    const unsubscribe = jest.fn();
+    mockAccountRuntime.service = {
+      getCurrentAccount: jest.fn().mockResolvedValue({
+        userId: 'user-123',
+        email: 'learner@example.com',
+      }),
+      subscribeToAccountChanges: jest.fn((listener) => {
+        authStateListener = listener;
+        return unsubscribe;
+      }),
+    };
+
+    const screen = await render(<HomeScreen />);
+    await act(async () => {});
+    expect(useLocalProgress).toHaveBeenLastCalledWith(
+      mockAccountRepository,
+      CATALOG_VERSION,
+    );
+
+    await act(async () => authStateListener?.(null));
+
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+    await screen.unmount();
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
 
   it('uses accurate primary actions and opens a completed-journey celebration', async () => {

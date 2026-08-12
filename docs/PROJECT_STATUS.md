@@ -1,6 +1,6 @@
 # Project Status
 
-**Snapshot:** 2026-08-04
+**Snapshot:** 2026-08-12
 
 ## Executive status
 
@@ -15,6 +15,13 @@ Released:
 - Web-default development and production export workflow
 - Mobile-browser-first delivery with complete desktop access
 - Dormant native Expo/SQLite infrastructure preserved for possible future use
+
+Development worktree:
+
+- An implemented but production-blocked optional account slice
+- Verified-email create/sign-in behind fail-closed public configuration
+- Account-specific browser progress with explicit manual synchronization
+- Anonymous progress remains separate and is never uploaded
 
 ## Verified product capabilities
 
@@ -32,11 +39,11 @@ Released:
 ## Progress semantics
 
 - Journey completion persists across reloads in the same browser origin.
-- Progress does not sync across devices or browsers.
+- Released v1.0.0 progress does not sync across devices or browsers.
 - Clearing browser site data may remove progress.
 - Guided Practice remains unpersisted and competitively isolated.
 - Timed practice scores/ranks/badges remain session-local and unverified.
-- No account or authoritative cloud progress is implemented.
+- The development account slice synchronizes self-reported practice completion only; no authoritative cloud progress or credential is implemented.
 
 ## Release process
 
@@ -51,8 +58,8 @@ Each public release verifies:
 
 ## Known limitations
 
-- No phone-to-desktop or cross-device synchronization
-- No account recovery/export/deletion because accounts do not exist
+- Released v1.0.0 has no phone-to-desktop or cross-device synchronization
+- The development account slice is not production-enabled; approved recovery, export, deletion, and retention operations remain required
 - Browser-private/storage-restricted modes may prevent persistence
 - Multiple tabs are not a real-time synchronization system
 - Physical-device browser checks remain a separate release input from desktop responsive emulation

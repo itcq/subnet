@@ -1,6 +1,6 @@
 # Project Overview
 
-**Last reviewed:** 2026-08-04
+**Last reviewed:** 2026-08-12
 
 ## Project identity
 
@@ -16,7 +16,7 @@ Help aspiring network administrators and engineers build accurate subnet-boundar
 - Narrow mobile browsers are the primary design and QA constraint
 - Tablet and desktop browsers provide the complete curriculum and Journey
 - Journey completion survives reloads in the same browser origin
-- Progress does not sync between phone and desktop, browsers, or devices
+- Released v1.0.0 progress does not sync between phone and desktop, browsers, or devices
 - Apple and Android packaging is deferred unless evidence justifies it
 
 ## Current learner experience
@@ -47,14 +47,16 @@ The Journey is untimed. Timed practice is optional and does not gate learning pr
 - GitHub Pages `/subnet` base path, `.nojekyll`, public indexing metadata, and crawler access
 - Dormant native SQLite/SecureStore/EAS infrastructure for a possible future phase
 
+## Development account slice
+
+The current worktree contains an implemented but production-blocked optional account slice: verified-email create/sign-in, account-specific browser progress, and explicit manual synchronization across browsers and devices. Anonymous progress stays separate and is never uploaded. The account path fails closed without valid public configuration and is not enabled in released v1.0.0.
+
 ## Not yet implemented
 
-- Cross-device or cross-browser synchronization
-- Registration or sign-in UI
-- Hosted account backend
+- Production approval and enablement of the optional account/manual-sync slice
 - Server-side attempt verification
 - Authoritative public rankings or credentials
-- Account recovery/export/deletion
+- Account recovery beyond verified-email OTP; authenticated self-service export/deletion is implemented in the production-blocked slice
 - Staff reporting dashboard
 - Native store identifiers, signing, distribution, or physical native acceptance
 
@@ -73,7 +75,7 @@ The Journey is untimed. Timed practice is optional and does not gate learning pr
 
 **Stage:** Public production web release with durable same-browser Journey progress.
 
-The next product evidence is true-beginner comprehension and transfer testing. Cross-device accounts and native apps remain optional later decisions.
+The next product evidence is true-beginner comprehension and transfer testing. Production account enablement remains blocked on real database authorization tests, configured lifecycle E2E, approved privacy/data-lifecycle operations, and physical iPhone WebKit QA. Native apps remain an optional later decision.
 
 ## Related documentation
 

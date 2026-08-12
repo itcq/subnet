@@ -1,6 +1,6 @@
 # Project Decisions
 
-**Last updated:** 2026-08-04
+**Last updated:** 2026-08-12
 
 This log records decisions that materially constrain the implementation. Change a decision explicitly rather than allowing the code and documentation to drift.
 
@@ -38,11 +38,11 @@ Connectivity and authentication failures must not destroy or block an in-progres
 
 ## D-005 — Managed authentication
 
-**Status:** Accepted direction; provider implementation incomplete
+**Status:** Implemented for the production-blocked web account slice
 
-Use managed identity rather than custom password storage or cryptography. Supabase Auth is the current implementation direction, beginning with verified passwordless email.
+Use managed identity rather than custom password storage or cryptography. The current web implementation uses Supabase Auth with verified passwordless email.
 
-**Consequence:** Session secrets use Expo SecureStore. Privileged keys never ship in the app.
+**Consequence:** Web session material uses tab-scoped `sessionStorage`; dormant native work may use Expo SecureStore only after separate native review. Privileged keys never ship in the app. Public account enablement remains blocked on configured lifecycle and operational security gates.
 
 ## D-006 — Server-authoritative verified progress and badges
 
@@ -112,9 +112,17 @@ Ship the initial product as a responsive static web application. Mobile browser 
 
 **Status:** Accepted
 
-Web Journey completion uses a versioned localStorage repository behind `LocalProgressRepository`. It survives reloads on the same browser origin but is not account-backed or cross-device synchronized.
+Anonymous web Journey completion uses a versioned `localStorage` repository behind `LocalProgressRepository`. It survives reloads on the same browser origin. The optional account slice uses a separate user-ID-derived browser namespace and can synchronize only progress completed while signed in after an explicit learner action; anonymous history is never imported.
 
-**Consequence:** The app explicitly discloses the storage scope. Malformed, unavailable, quota-limited, or unwritable storage fails closed through accessible load/save handling rather than silently clearing data. Timed scores, ranks, and badges remain session-local and unverified.
+**Consequence:** The app explicitly discloses each storage scope. Malformed, unavailable, quota-limited, or unwritable storage fails closed through accessible load/save handling rather than silently clearing data. Timed scores, ranks, and badges remain session-local and unverified. Account synchronization is a manual snapshot through one atomic expected-user-bound database RPC, not continuous background synchronization.
+
+## D-015 — Account retention and self-service lifecycle
+
+**Status:** Accepted for the production-blocked account slice
+
+Account and manually synchronized progress rows are retained while the optional account exists. Authenticated learners can download a versioned JSON export and permanently delete their own account after typed confirmation. Database ownership checks bind both operations to `auth.uid()`; deletion cascades through profile/progress rows and removes only the deleted account's browser namespace.
+
+**Consequence:** Anonymous progress remains untouched. No automatic inactive-account purge is promised. Provider log/backup retention and legal/privacy contact fields remain launch-time operational requirements.
 
 ## Open decisions
 
@@ -122,7 +130,7 @@ Web Journey completion uses a versioned localStorage repository behind `LocalPro
 - Final product name and branding
 - Registration policy after beta
 - Minimum age
-- Retention/deletion policy
+- Provider log and backup retention periods
 - Staff reporting roles
 - Email provider/domain
 - Badge sharing/export

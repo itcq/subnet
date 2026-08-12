@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   BackHandler,
@@ -10,23 +10,42 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { createPublicAccountRuntime } from '@/auth/accountRuntime';
+import type { AccountIdentity } from '@/auth/accountAuth';
 import type { LocalTimedResult } from '@/domain/achievements/achievements';
 import { CATALOG_VERSION, subnetQuestionCatalog } from '@/domain/questions/catalog';
 import { getJourneyPosition, JOURNEY_STAGES, type JourneyPosition } from '@/domain/questions/journey';
+import { AccountRegistration } from '@/features/account/AccountRegistration';
+import { downloadAccountDataExport } from '@/features/account/downloadAccountDataExport';
 import { LocalAchievements } from '@/features/achievements/LocalAchievements';
 import { NetworkChallenge } from '@/features/challenge/NetworkChallenge';
 import { GuidedPractice } from '@/features/learning/GuidedPractice';
 import { LearnSubnetting } from '@/features/learning/LearnSubnetting';
 import { TimedChallenge } from '@/features/timed/TimedChallenge';
 import { TimedModeSetup } from '@/features/timed/TimedModeSetup';
-import { createProgressRepository } from '@/progress/createProgressRepository';
+import { AccountProgressSync } from '@/progress/accountProgressSync';
+import {
+  clearAccountProgressRepository,
+  createAccountProgressRepository,
+  createProgressRepository,
+} from '@/progress/createProgressRepository';
 import { useLocalProgress } from '@/progress/useLocalProgress';
 
 const progressRuntime = createProgressRepository();
+const accountRuntime = createPublicAccountRuntime();
 const TAGLINE = 'Learn subnetting one short lesson at a time.';
+
+function resolveJourneyQuestionId(ordinal: number): string {
+  const question = subnetQuestionCatalog[ordinal - 1];
+  if (question?.ordinal !== ordinal) {
+    throw new Error('Catalog question could not be resolved.');
+  }
+  return question.id;
+}
 
 type Screen =
   | 'menu'
+  | 'account'
   | 'challenge'
   | 'learning-practice'
   | 'timed-setup'
@@ -145,7 +164,35 @@ function LessonPath({ position }: { position: JourneyPosition }) {
 }
 
 export default function HomeScreen() {
-  const progress = useLocalProgress(progressRuntime.repository, CATALOG_VERSION);
+  const [accountIdentity, setAccountIdentity] = useState<AccountIdentity | null>(null);
+  const [activeProgressRepository, setActiveProgressRepository] = useState(
+    progressRuntime.repository,
+  );
+  const progress = useLocalProgress(activeProgressRepository, CATALOG_VERSION);
+  const accountIdentityVersion = useRef(0);
+  const accountIdentityRef = useRef<AccountIdentity | null>(null);
+  const handleAccountIdentityChange = useCallback((identity: AccountIdentity | null) => {
+    accountIdentityVersion.current += 1;
+    accountIdentityRef.current = identity;
+    if (identity === null) {
+      setAccountIdentity(null);
+      setActiveProgressRepository(progressRuntime.repository);
+      return;
+    }
+
+    const accountRepository = createAccountProgressRepository(identity.userId);
+    setAccountIdentity(identity);
+    setActiveProgressRepository(accountRepository);
+  }, []);
+  const accountProgressSync = useMemo(() => {
+    if (accountIdentity === null || accountRuntime.progressGateway === null) return null;
+    return new AccountProgressSync(
+      accountIdentity.userId,
+      createAccountProgressRepository(accountIdentity.userId),
+      accountRuntime.progressGateway,
+      resolveJourneyQuestionId,
+    );
+  }, [accountIdentity]);
   const [screen, setScreen] = useState<Screen>('menu');
   const [guidedLessonOpen, setGuidedLessonOpen] = useState(false);
   const [timedResults, setTimedResults] = useState<readonly LocalTimedResult[]>([]);
@@ -155,6 +202,36 @@ export default function HomeScreen() {
   const resetLocalScroll = useCallback(() => {
     localScreenScrollRef.current?.scrollTo({ animated: false, y: 0 });
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const restoreVersion = accountIdentityVersion.current;
+    const service = accountRuntime.service;
+    if (service === null) return () => {
+      active = false;
+    };
+
+    const stopListening = service.subscribeToAccountChanges?.((identity) => {
+      if (active) handleAccountIdentityChange(identity);
+    }) ?? (() => undefined);
+
+    void service.getCurrentAccount()
+      .then((identity) => {
+        if (active && accountIdentityVersion.current === restoreVersion) {
+          handleAccountIdentityChange(identity);
+        }
+      })
+      .catch(() => {
+        if (active && accountIdentityVersion.current === restoreVersion) {
+          handleAccountIdentityChange(null);
+        }
+      });
+
+    return () => {
+      active = false;
+      stopListening();
+    };
+  }, [handleAccountIdentityChange]);
 
   const navigateTo = (nextScreen: Screen) => {
     resetLocalScroll();
@@ -317,6 +394,70 @@ export default function HomeScreen() {
     );
   }
 
+  if (screen === 'account') {
+    const accountDataService = accountRuntime.dataService;
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <AccountRegistration
+          key={accountIdentity?.userId ?? 'anonymous-account'}
+          onBack={() => navigateTo('menu')}
+          onDeleteAccount={
+            accountDataService === null
+              ? null
+              : async (identity) => {
+                  if (accountIdentityRef.current?.userId !== identity.userId) {
+                    throw new Error('Account changed before deletion.');
+                  }
+                  await accountDataService.deleteOwnAccount(identity.userId);
+                  try {
+                    clearAccountProgressRepository(identity.userId);
+                  } catch {
+                    // Backend deletion is authoritative; browser cleanup can be retried locally.
+                  }
+                  try {
+                    await accountRuntime.service?.clearDeletedAccountSession(identity.userId);
+                  } catch {
+                    // Account deletion already succeeded. Keep the stale identity visible rather
+                    // than falsely reporting deletion failure or switching repositories locally.
+                  }
+                }
+          }
+          onExportAccountData={
+            accountDataService === null
+              ? null
+              : async (identity) => {
+                  const operationVersion = accountIdentityVersion.current;
+                  if (accountIdentity?.userId !== identity.userId) {
+                    throw new Error('Account changed before export.');
+                  }
+                  const data = await accountDataService.exportAccountData(identity.userId);
+                  if (accountIdentityVersion.current !== operationVersion) {
+                    throw new Error('Account changed while export was completing.');
+                  }
+                  downloadAccountDataExport(data);
+                }
+          }
+          onIdentityChange={handleAccountIdentityChange}
+          onSyncProgress={
+            accountProgressSync === null
+              ? null
+              : async () => {
+                  const syncIdentityVersion = accountIdentityVersion.current;
+                  const result = await accountProgressSync.syncCatalog(CATALOG_VERSION, true);
+                  if (accountIdentityVersion.current !== syncIdentityVersion) {
+                    throw new Error('Account changed while progress was syncing.');
+                  }
+                  progress.adoptCompletedOrdinals(result.completedOrdinals);
+                  return result;
+                }
+          }
+          privacyNoticeUrl={accountRuntime.privacyNoticeUrl}
+          service={accountRuntime.service}
+        />
+      </SafeAreaView>
+    );
+  }
+
   if (screen === 'achievements') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
@@ -470,6 +611,12 @@ export default function HomeScreen() {
             <MenuButton label="LOCAL RANK & BADGES" onPress={() => navigateTo('achievements')} />
             <MenuButton label="HOW TO PLAY" onPress={() => navigateTo('how-to-play')} />
             <MenuButton label="VIEW JOURNEY" onPress={() => navigateTo('journey')} />
+            <MenuButton
+              label={accountIdentity === null
+                ? 'CREATE OR SIGN IN TO ACCOUNT'
+                : `ACCOUNT: ${accountIdentity.email}`}
+              onPress={() => navigateTo('account')}
+            />
           </View>
           <StagePath nextOrdinal={nextQuestion?.ordinal} />
           <Text style={styles.trustText}>
