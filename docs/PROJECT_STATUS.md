@@ -20,7 +20,7 @@ Development worktree:
 
 - An implemented but production-blocked optional account slice
 - Verified-email create/sign-in behind fail-closed public configuration
-- Account-specific browser progress with explicit manual synchronization
+- Account-specific browser progress with automatic signed-in synchronization
 - Anonymous progress remains separate and is never uploaded
 
 ## Verified product capabilities

@@ -30,7 +30,7 @@ We use account information to:
 
 - Create and maintain your optional account
 - Authenticate you using a one-time email code
-- Store and return progress that you manually choose to synchronize
+- Automatically synchronize and return Journey progress completed while you are signed in
 - Restore authenticated account sessions
 - Provide account-data download functionality
 - Process account-deletion requests
@@ -58,7 +58,7 @@ We will update this Privacy Notice if an additional provider processes personal 
 
 ## 5. Data retention
 
-Account-associated data and manually synchronized progress are retained while your account exists. The App does not currently promise automatic deletion after a period of inactivity.
+Account-associated data and automatically synchronized signed-in progress are retained while your account exists. The App does not currently promise automatic deletion after a period of inactivity.
 
 You may permanently delete your account from the account screen. Account deletion removes the managed authentication account and the App-owned profile and synchronized-progress records associated with that account.
 
@@ -71,7 +71,7 @@ Anonymous progress is separate from registered-account data. Deleting an account
 Registered users can:
 
 - Sign out of their account
-- Choose when to synchronize account progress
+- Have Journey progress completed while signed in synchronized automatically
 - Download their account data in a versioned JSON file
 - Permanently delete their account after a deliberate confirmation step
 

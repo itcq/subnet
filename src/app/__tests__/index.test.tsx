@@ -133,7 +133,7 @@ import { useLocalProgress } from '@/progress/useLocalProgress';
 const HomeScreen = require('../index').default as typeof import('../index').default;
 
 const WEB_NOTICE =
-  'Journey progress is saved in this browser unless you sign in and choose to sync it.';
+  'Anonymous Journey progress stays in this browser. Signed-in progress syncs to your account automatically.';
 const TAGLINE = 'Learn subnetting one short lesson at a time.';
 
 jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_eventName, handler) => {
@@ -267,12 +267,11 @@ describe('HomeScreen launch and menu flow', () => {
       expect.objectContaining({
         service: null,
         onBack: expect.any(Function),
-        onSyncProgress: null,
       }),
     );
   });
 
-  it('switches to account-owned progress, adopts sync results, and restores anonymous state on sign out', async () => {
+  it('switches to account-owned progress, syncs automatically, and restores anonymous state on sign out', async () => {
     hydrated();
     mockAccountRuntime.configured = true;
     mockAccountRuntime.progressGateway = mockProgressGateway;
@@ -286,11 +285,6 @@ describe('HomeScreen launch and menu flow', () => {
     type AccountProps = Readonly<{
       onBack(): void;
       onIdentityChange(identity: { userId: string; email: string } | null): void;
-      onSyncProgress: null | (() => Promise<{
-        completedOrdinals: readonly number[];
-        localCount: number;
-        remoteCount: number;
-      }>);
     }>;
     let props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
     await act(async () => {
@@ -302,13 +296,12 @@ describe('HomeScreen launch and menu flow', () => {
       mockAccountRepository,
       CATALOG_VERSION,
     );
-    props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
-    expect(props.onSyncProgress).not.toBeNull();
-    await expect(props.onSyncProgress?.()).resolves.toEqual({
-      completedOrdinals: [],
-      localCount: 0,
-      remoteCount: 0,
-    });
+    await act(async () => undefined);
+    expect(mockProgressGateway.syncCompleted).toHaveBeenCalledWith(
+      'user-123',
+      CATALOG_VERSION,
+      [],
+    );
     expect(mockAdoptCompletedOrdinals).toHaveBeenCalledWith([]);
     expect(mockRefresh).not.toHaveBeenCalled();
 
@@ -405,22 +398,14 @@ describe('HomeScreen launch and menu flow', () => {
 
     type AccountProps = Readonly<{
       onIdentityChange(identity: { userId: string; email: string } | null): void;
-      onSyncProgress: null | (() => Promise<unknown>);
     }>;
     let props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
     await act(async () => props.onIdentityChange({
       userId: 'user-123',
       email: 'learner@example.com',
     }));
-    props = mockAccountRegistration.mock.calls.at(-1)?.[0] as AccountProps;
-    const syncPromise = props.onSyncProgress?.();
-    const syncExpectation = expect(syncPromise).rejects.toThrow(
-      'Account changed while progress was syncing.',
-    );
-
     await act(async () => props.onIdentityChange(null));
     await act(async () => resolveRemote([]));
-    await syncExpectation;
     expect(mockAdoptCompletedOrdinals).not.toHaveBeenCalled();
     expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
   });
@@ -750,6 +735,116 @@ describe('HomeScreen launch and menu flow', () => {
     await startJourney(screen);
     expect(screen.getByTestId('network-challenge')).toBeTruthy();
     expect(screen.queryByText('We could not load your saved progress.')).toBeNull();
+  });
+
+  it('syncs a signed-in challenge completion automatically after saving it locally', async () => {
+    hydrated({ completedOrdinals: [] });
+    mockAccountRuntime.configured = true;
+    mockAccountRuntime.progressGateway = mockProgressGateway;
+    mockRecordCompletion.mockResolvedValue(undefined);
+    const completedAt = '2026-08-13T12:00:00.000Z';
+    jest.mocked(mockAccountRepository.listCompleted)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{
+        catalogVersion: CATALOG_VERSION,
+        questionId: subnetQuestionCatalog[0].id,
+        ordinal: subnetQuestionCatalog[0].ordinal,
+        completedAt,
+        attemptCount: 1,
+        pendingSync: true,
+      }]);
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    const accountProps = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
+      onBack(): void;
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+    }>;
+    await act(async () => accountProps.onIdentityChange({
+      userId: 'user-123',
+      email: 'learner@example.com',
+    }));
+    await act(async () => accountProps.onBack());
+    mockProgressGateway.syncCompleted.mockClear();
+
+    await startJourney(screen);
+    const challengeProps = mockNetworkChallenge.mock.calls.at(-1)?.[0] as Readonly<{
+      onQuestionCompleted(question: SubnetQuestion): Promise<void>;
+    }>;
+    await act(async () => challengeProps.onQuestionCompleted(subnetQuestionCatalog[0]));
+
+    expect(mockRecordCompletion).toHaveBeenCalledTimes(1);
+    expect(mockProgressGateway.syncCompleted).toHaveBeenCalledWith(
+      'user-123',
+      CATALOG_VERSION,
+      [{
+        catalogVersion: CATALOG_VERSION,
+        ordinal: subnetQuestionCatalog[0].ordinal,
+        completedAt,
+      }],
+    );
+  });
+
+  it('never regresses visible progress when an older automatic sync resolves last', async () => {
+    hydrated({ completedOrdinals: [] });
+    mockAccountRuntime.configured = true;
+    mockAccountRuntime.progressGateway = mockProgressGateway;
+    let resolveOlderSync!: (rows: readonly []) => void;
+    let resolveNewerSync!: (rows: readonly [{
+      catalogVersion: string;
+      ordinal: number;
+      completedAt: string;
+    }]) => void;
+    const olderSync = new Promise<readonly []>((resolve) => {
+      resolveOlderSync = resolve;
+    });
+    const newerSync = new Promise<readonly [{
+      catalogVersion: string;
+      ordinal: number;
+      completedAt: string;
+    }]>((resolve) => {
+      resolveNewerSync = resolve;
+    });
+    mockProgressGateway.syncCompleted
+      .mockImplementationOnce(() => olderSync)
+      .mockImplementationOnce(() => newerSync);
+    jest.mocked(mockAccountRepository.listCompleted)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{
+        catalogVersion: CATALOG_VERSION,
+        questionId: subnetQuestionCatalog[0].id,
+        ordinal: 1,
+        completedAt: '2026-08-13T12:00:00.000Z',
+        attemptCount: 1,
+        pendingSync: true,
+      }]);
+
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    const accountProps = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
+      onBack(): void;
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+    }>;
+    await act(async () => accountProps.onIdentityChange({
+      userId: 'user-123',
+      email: 'learner@example.com',
+    }));
+    await act(async () => accountProps.onBack());
+    await startJourney(screen);
+    const challengeProps = mockNetworkChallenge.mock.calls.at(-1)?.[0] as Readonly<{
+      onQuestionCompleted(question: SubnetQuestion): Promise<void>;
+    }>;
+    const completion = challengeProps.onQuestionCompleted(subnetQuestionCatalog[0]);
+
+    await act(async () => resolveNewerSync([{
+      catalogVersion: CATALOG_VERSION,
+      ordinal: 1,
+      completedAt: '2026-08-13T12:00:00.000Z',
+    }]));
+    await completion;
+    expect(mockAdoptCompletedOrdinals).toHaveBeenLastCalledWith([1]);
+
+    await act(async () => resolveOlderSync([]));
+    expect(mockAdoptCompletedOrdinals).toHaveBeenLastCalledWith([1]);
   });
 
   it('records stable question fields with a deterministic completion timestamp', async () => {

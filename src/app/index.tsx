@@ -170,6 +170,7 @@ export default function HomeScreen() {
   );
   const progress = useLocalProgress(activeProgressRepository, CATALOG_VERSION);
   const accountIdentityVersion = useRef(0);
+  const accountSyncVersion = useRef(0);
   const accountIdentityRef = useRef<AccountIdentity | null>(null);
   const handleAccountIdentityChange = useCallback((identity: AccountIdentity | null) => {
     accountIdentityVersion.current += 1;
@@ -193,6 +194,26 @@ export default function HomeScreen() {
       resolveJourneyQuestionId,
     );
   }, [accountIdentity]);
+
+  const adoptCompletedOrdinals = progress.adoptCompletedOrdinals;
+
+  useEffect(() => {
+    if (accountProgressSync === null) return;
+    const syncIdentityVersion = accountIdentityVersion.current;
+    const syncVersion = ++accountSyncVersion.current;
+    void accountProgressSync.syncCatalog(CATALOG_VERSION, true)
+      .then((result) => {
+        if (
+          accountIdentityVersion.current !== syncIdentityVersion
+          || accountSyncVersion.current !== syncVersion
+        ) return;
+        adoptCompletedOrdinals(result.completedOrdinals);
+      })
+      .catch(() => {
+        // Account-local progress remains durable and will be retried after the
+        // next signed-in completion or restored account session.
+      });
+  }, [accountProgressSync, adoptCompletedOrdinals]);
   const [screen, setScreen] = useState<Screen>('menu');
   const [guidedLessonOpen, setGuidedLessonOpen] = useState(false);
   const [timedResults, setTimedResults] = useState<readonly LocalTimedResult[]>([]);
@@ -340,6 +361,22 @@ export default function HomeScreen() {
                 attemptCount: 1,
                 pendingSync: true,
               });
+              if (accountProgressSync !== null) {
+                const syncIdentityVersion = accountIdentityVersion.current;
+                const syncVersion = ++accountSyncVersion.current;
+                try {
+                  const result = await accountProgressSync.syncCatalog(CATALOG_VERSION, true);
+                  if (
+                    accountIdentityVersion.current === syncIdentityVersion
+                    && accountSyncVersion.current === syncVersion
+                  ) {
+                    progress.adoptCompletedOrdinals(result.completedOrdinals);
+                  }
+                } catch {
+                  // The account-local completion is already saved. A later signed-in
+                  // completion or restored session will retry synchronization.
+                }
+              }
             }}
             questions={subnetQuestionCatalog}
           />
@@ -438,19 +475,6 @@ export default function HomeScreen() {
                 }
           }
           onIdentityChange={handleAccountIdentityChange}
-          onSyncProgress={
-            accountProgressSync === null
-              ? null
-              : async () => {
-                  const syncIdentityVersion = accountIdentityVersion.current;
-                  const result = await accountProgressSync.syncCatalog(CATALOG_VERSION, true);
-                  if (accountIdentityVersion.current !== syncIdentityVersion) {
-                    throw new Error('Account changed while progress was syncing.');
-                  }
-                  progress.adoptCompletedOrdinals(result.completedOrdinals);
-                  return result;
-                }
-          }
           privacyNoticeUrl={accountRuntime.privacyNoticeUrl}
           service={accountRuntime.service}
         />

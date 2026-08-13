@@ -38,10 +38,10 @@ describe('AccountRegistration', () => {
     );
 
     expect(screen.getByRole('header', { name: 'Create or sign in to your account' })).toBeTruthy();
-    expect(screen.getByText(/complete challenges while signed in, and choose when to sync/i)).toBeTruthy();
+    expect(screen.getByText(/save signed-in journey progress to your account automatically/i)).toBeTruthy();
     expect(screen.getByText(/does not subscribe you to marketing/i)).toBeTruthy();
     expect(screen.getByText(/anonymous browser progress stays separate/i)).toBeTruthy();
-    expect(screen.getByText(/sync is a manual snapshot of progress completed while signed in/i)).toBeTruthy();
+    expect(screen.getByText(/anonymous browser progress stays separate and is never uploaded/i)).toBeTruthy();
     await fireEvent.changeText(
       screen.getByLabelText('Email address'),
       'Learner@Example.com',
@@ -71,7 +71,7 @@ describe('AccountRegistration', () => {
     expect(screen.getByText('learner@example.com')).toBeTruthy();
   });
 
-  it('syncs existing Journey progress only after a separate consent action', async () => {
+  it('does not expose a manual sync action after sign in', async () => {
     const service = {
       getCurrentAccount: jest.fn().mockResolvedValue(null),
       requestRegistrationCode: jest.fn().mockResolvedValue(undefined),
@@ -80,15 +80,9 @@ describe('AccountRegistration', () => {
         email: 'learner@example.com',
       }),
     } as unknown as AccountAuthService;
-    const onSyncProgress = jest.fn().mockResolvedValue({
-      completedOrdinals: [1, 2, 3, 4, 5, 6, 7],
-      localCount: 7,
-      remoteCount: 7,
-    });
     const screen = await render(
       <AccountRegistration
         onBack={jest.fn()}
-        onSyncProgress={onSyncProgress}
         service={service}
       />,
     );
@@ -99,13 +93,8 @@ describe('AccountRegistration', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'VERIFY AND CONTINUE' }));
 
     await waitFor(() => expect(screen.getByRole('header', { name: 'Account ready' })).toBeTruthy());
-    expect(onSyncProgress).not.toHaveBeenCalled();
-    expect(screen.getByText(/manual snapshot of progress completed while signed in/i)).toBeTruthy();
-
-    await fireEvent.press(screen.getByRole('button', { name: 'SYNC MY JOURNEY PROGRESS' }));
-
-    await waitFor(() => expect(onSyncProgress).toHaveBeenCalledTimes(1));
-    expect(screen.getByText('7 completed challenges are synced.')).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'SYNC MY JOURNEY PROGRESS' })).toBeNull();
+    expect(screen.getByText(/signed-in journey progress is saved to your account automatically/i)).toBeTruthy();
   });
 
   it('explains account-only sync and sign-out behavior before synchronization', async () => {
@@ -116,15 +105,9 @@ describe('AccountRegistration', () => {
       verifyRegistrationCode: jest.fn(),
       signOut: jest.fn(),
     } as unknown as AccountAuthService;
-    const onSyncProgress = jest.fn().mockResolvedValue({
-      completedOrdinals: [8],
-      localCount: 1,
-      remoteCount: 1,
-    });
     const screen = await render(
       <AccountRegistration
         onBack={jest.fn()}
-        onSyncProgress={onSyncProgress}
         service={service}
       />,
     );
@@ -135,29 +118,6 @@ describe('AccountRegistration', () => {
     expect(screen.getByText(/account progress remains stored in this browser/i)).toBeTruthy();
   });
 
-  it('does not promise browser data safety when synchronization fails', async () => {
-    const identity = { userId: 'user-123', email: 'learner@example.com' };
-    const service = {
-      getCurrentAccount: jest.fn().mockResolvedValue(identity),
-      requestRegistrationCode: jest.fn(),
-      verifyRegistrationCode: jest.fn(),
-      signOut: jest.fn(),
-    } as unknown as AccountAuthService;
-    const onSyncProgress = jest.fn().mockRejectedValue(new Error('storage unavailable'));
-    const screen = await render(
-      <AccountRegistration
-        onBack={jest.fn()}
-        onSyncProgress={onSyncProgress}
-        service={service}
-      />,
-    );
-    await waitFor(() => expect(screen.getByRole('header', { name: 'Account ready' })).toBeTruthy());
-
-    await fireEvent.press(screen.getByRole('button', { name: 'SYNC MY JOURNEY PROGRESS' }));
-
-    await waitFor(() => expect(screen.getByText('Progress could not be synced. Please try again.')).toBeTruthy());
-    expect(screen.queryByText(/browser progress is still safe/i)).toBeNull();
-  });
 
   it('restores an authenticated session and provides explicit sign out', async () => {
     const identity = { userId: 'user-123', email: 'learner@example.com' };

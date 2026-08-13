@@ -19,7 +19,6 @@ export function AccountRegistration({
   onDeleteAccount = null,
   onExportAccountData = null,
   onIdentityChange,
-  onSyncProgress = null,
   privacyNoticeUrl = null,
   service,
 }: Readonly<{
@@ -27,11 +26,6 @@ export function AccountRegistration({
   onDeleteAccount?: ((identity: AccountIdentity) => Promise<void>) | null;
   onExportAccountData?: ((identity: AccountIdentity) => Promise<void>) | null;
   onIdentityChange?: (identity: AccountIdentity | null) => void;
-  onSyncProgress?: (() => Promise<Readonly<{
-    completedOrdinals: readonly number[];
-    localCount: number;
-    remoteCount: number;
-  }>>) | null;
   privacyNoticeUrl?: string | null;
   service: AccountAuthService | null;
 }>) {
@@ -39,7 +33,7 @@ export function AccountRegistration({
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [verifiedEmail, setVerifiedEmail] = useState('');
-  const [syncCount, setSyncCount] = useState<number | null>(null);
+
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [lifecycleMessage, setLifecycleMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -65,7 +59,6 @@ export function AccountRegistration({
       setIdentity(currentIdentity);
       setBusy(false);
       setError(null);
-      setSyncCount(null);
       if (currentIdentity === null) {
         setVerifiedEmail('');
         setStage('email');
@@ -142,22 +135,6 @@ export function AccountRegistration({
     }
   };
 
-  const syncProgress = async () => {
-    if (onSyncProgress === null || identity === null) return;
-    const operationVersion = identityVersion.current;
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await onSyncProgress();
-      if (!mounted.current || identityVersion.current !== operationVersion) return;
-      setSyncCount(result.localCount);
-    } catch {
-      if (!mounted.current || identityVersion.current !== operationVersion) return;
-      setError('Progress could not be synced. Please try again.');
-    } finally {
-      if (mounted.current && identityVersion.current === operationVersion) setBusy(false);
-    }
-  };
 
   const signOut = async () => {
     const activeService = service;
@@ -174,7 +151,6 @@ export function AccountRegistration({
       setVerifiedEmail('');
       setEmail('');
       setCode('');
-      setSyncCount(null);
       setStage('email');
       onIdentityChange?.(null);
     } catch {
@@ -249,18 +225,11 @@ export function AccountRegistration({
             <Text style={styles.body}>Signed in as</Text>
             <Text style={styles.email}>{verifiedEmail}</Text>
             <Text style={styles.note}>
-              Sync is a manual snapshot of progress completed while signed in. Anonymous browser progress is never uploaded. Sync again after completing more signed-in challenges.
+              Signed-in Journey progress is saved to your account automatically. Anonymous browser progress is never uploaded.
             </Text>
             <Text style={styles.note}>
               Signing out returns this Journey to anonymous browser progress. Account progress remains stored in this browser for your next sign-in.
             </Text>
-            {syncCount === null ? null : (
-              <Text accessibilityLiveRegion="polite" style={styles.syncSuccess}>
-                {syncCount === 1
-                  ? '1 completed challenge is synced.'
-                  : `${syncCount} completed challenges are synced.`}
-              </Text>
-            )}
 
             {error === null ? null : (
               <Text accessibilityLiveRegion="polite" style={styles.error}>{error}</Text>
@@ -268,21 +237,7 @@ export function AccountRegistration({
             {lifecycleMessage === null ? null : (
               <Text accessibilityLiveRegion="polite" style={styles.syncSuccess}>{lifecycleMessage}</Text>
             )}
-            {onSyncProgress === null ? (
-              <Text style={styles.note}>Progress sync is not configured in this build.</Text>
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                disabled={busy}
-                onPress={syncProgress}
-                style={({ pressed }) => [styles.primaryButton, (pressed || busy) && styles.pressed]}>
-                {busy ? (
-                  <ActivityIndicator accessibilityLabel="Syncing Journey progress" color="#101820" />
-                ) : (
-                  <Text style={styles.primaryText}>SYNC MY JOURNEY PROGRESS</Text>
-                )}
-              </Pressable>
-            )}
+
             {onExportAccountData === null ? null : (
               <Pressable
                 accessibilityRole="button"
@@ -332,10 +287,10 @@ export function AccountRegistration({
           <View style={styles.card}>
             <Text accessibilityRole="header" style={styles.title}>Create or sign in to your account</Text>
             <Text style={styles.body}>
-              Use a verified email, complete challenges while signed in, and choose when to sync them across browsers and devices.
+              Use a verified email to save signed-in Journey progress to your account automatically across browsers and devices.
             </Text>
             <Text style={styles.note}>
-              Anonymous browser progress stays separate and is never uploaded. Sync is a manual snapshot of progress completed while signed in.
+              Anonymous browser progress stays separate and is never uploaded.
             </Text>
             <Text style={styles.note}>
               Creating an account does not subscribe you to marketing email.

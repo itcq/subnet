@@ -21,7 +21,7 @@ const runtime: ProgressRepositoryRuntime = Object.freeze({
   repository,
   durable: true,
   persistenceNotice:
-    'Journey progress is saved in this browser unless you sign in and choose to sync it.',
+    'Anonymous Journey progress stays in this browser. Signed-in progress syncs to your account automatically.',
 });
 
 export function createProgressRepository(): ProgressRepositoryRuntime {

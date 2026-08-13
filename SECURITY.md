@@ -4,7 +4,7 @@
 
 Released v1.0.0 is a public static web application with browser-local Journey progress. Its production build has no configured account backend, cloud synchronization, payment flow, or authoritative credential system.
 
-The current development worktree contains an optional, fail-closed Supabase account and manual progress-synchronization implementation. It remains unavailable unless valid public backend configuration is supplied. Anonymous browser progress is never uploaded. Signed-in completions use an account-specific browser namespace and synchronize only after a separate learner action. This capability is not production-ready until every backend, privacy, data-lifecycle, and physical-device gate below passes.
+The current development worktree contains an optional, fail-closed Supabase account and automatic signed-in progress-synchronization implementation. It remains unavailable unless valid public backend configuration is supplied. Anonymous browser progress is never uploaded. Signed-in completions use an account-specific browser namespace and synchronize automatically after the account session is established and after each signed-in completion. This capability is not production-ready until every backend, privacy, data-lifecycle, and physical-device gate below passes.
 
 ## Reporting a security issue
 
@@ -76,7 +76,7 @@ Before enabling accounts in production, additionally require:
 
 - Real PostgreSQL execution of the complete pgTAP authorization suite
 - Two-user RLS isolation and cross-user mutation denial
-- Configured OTP, session expiry, sign-out, account switching, and manual-sync E2E
+- Configured OTP, session expiry, sign-out, account switching, and automatic-sync E2E
 - Project-owned SMTP, allowed origins, authentication rate limits, and delivery monitoring
 - Completed and published privacy notice, provider log/backup retention, and production verification of authenticated export/deletion
 - Physical iPhone Safari/WebKit acceptance

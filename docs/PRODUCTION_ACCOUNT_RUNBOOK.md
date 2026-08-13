@@ -8,7 +8,8 @@
 - Anonymous Journey progress stays browser-local and is never uploaded, imported, claimed, or deleted by account operations.
 - Registration does not subscribe a learner to marketing.
 - Signed-in completion uses an account-specific browser namespace.
-- Synchronization is an explicit manual snapshot.
+- Signed-in Journey progress synchronizes automatically when an account session is established and after each signed-in completion.
+- Anonymous browser progress remains separate and is never uploaded during account synchronization.
 - Synchronized completion is learner-reported practice continuity, not verified mastery or a credential.
 - Account export and deletion are authenticated self-service operations.
 
@@ -84,8 +85,8 @@ Use synthetic, project-controlled test inboxes only.
 1. Anonymous progress exists before registration.
 2. User A requests and verifies an OTP.
 3. User A sees no anonymous-history import.
-4. User A completes signed-in challenges and manually syncs.
-5. A new browser session for User A receives only synchronized account progress after manual sync.
+4. User A completes signed-in challenges and confirms synchronization occurs automatically.
+5. A new browser session for User A receives only the automatically synchronized account progress.
 6. User A signs out and anonymous progress returns.
 7. User B signs in on the same browser and cannot see or mutate User A progress.
 8. A delayed User A synchronization cannot write after switching to User B.
@@ -101,7 +102,7 @@ Use synthetic, project-controlled test inboxes only.
 On current iPhone Safari/WebKit at the production base path:
 
 - Request, enter, and verify the OTP using native email/keyboard flows.
-- Complete a signed-in challenge, manually sync, sign out, and sign back in.
+- Complete a signed-in challenge, confirm automatic synchronization, sign out, and sign back in.
 - Download the JSON export or confirm the platform's standard share/download behavior.
 - Confirm the deletion input/button remain reachable above the keyboard and safe-area insets.
 - Confirm no horizontal overflow, obscured controls, duplicate submission, or console/network error.

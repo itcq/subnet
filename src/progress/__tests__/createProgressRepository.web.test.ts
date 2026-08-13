@@ -5,7 +5,7 @@ import type { LocalQuestionProgress } from '../localProgressRepository';
 type WebFactoryModule = typeof import('../createProgressRepository');
 
 const WEB_NOTICE =
-  'Journey progress is saved in this browser unless you sign in and choose to sync it.';
+  'Anonymous Journey progress stays in this browser. Signed-in progress syncs to your account automatically.';
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();

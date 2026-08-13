@@ -22,7 +22,7 @@ Mobile / tablet / desktop browser
 │  └──> optional verified-email account                   │
 │         ├──> sessionStorage Supabase session            │
 │         ├──> account localStorage namespace by user ID  │
-│         └──> explicit manual synchronization            │
+│         └──> automatic signed-in synchronization        │
 └───────────────────────────┬─────────────────────────────┘
                             │ HTTPS / loopback HTTP only
                             ▼

@@ -38,7 +38,7 @@ npm run backend:reset
 npm run backend:test
 ```
 
-Account enablement requires all three public values: Supabase URL, Supabase publishable key, and an HTTPS `EXPO_PUBLIC_ACCOUNT_PRIVACY_URL`. Missing or malformed values keep accounts unavailable. Web auth sessions use `sessionStorage`. Anonymous Journey completion uses `subnet-game:journey-progress:v1`; account Journey completion uses a separate user-ID-derived `localStorage` namespace. Manual synchronization sends only signed-in account rows through the expected-user-bound `sync_account_progress` RPC. Authenticated export and deletion use `export_account_data` and `delete_own_account`; deletion removes the account-specific browser namespace without touching anonymous progress. Never place service-role, SMTP, database, signing, or other secrets in `EXPO_PUBLIC_*` variables.
+Account enablement requires all three public values: Supabase URL, Supabase publishable key, and an HTTPS `EXPO_PUBLIC_ACCOUNT_PRIVACY_URL`. Missing or malformed values keep accounts unavailable. Web auth sessions use `sessionStorage`. Anonymous Journey completion uses `subnet-game:journey-progress:v1`; account Journey completion uses a separate user-ID-derived `localStorage` namespace. Automatic synchronization sends only signed-in account rows through the expected-user-bound `sync_account_progress` RPC. Authenticated export and deletion use `export_account_data` and `delete_own_account`; deletion removes the account-specific browser namespace without touching anonymous progress. Never place service-role, SMTP, database, signing, or other secrets in `EXPO_PUBLIC_*` variables.
 
 GitHub Actions runs the real Supabase migration and pgTAP suite on every pushed branch and pull request. Production enablement still requires the same suite against the exact target project plus the operational gates in `docs/PRODUCTION_ACCOUNT_RUNBOOK.md`.
 
@@ -93,7 +93,7 @@ Check octet input bounds, touch targets, keyboard behavior, horizontal overflow,
 - Keep `src/domain/subnet.ts` independent of UI and persistence.
 - Keep Guided Practice isolated from competitive and persisted Journey state.
 - Never label anonymous browser-local state as cloud-synced or authoritative.
-- Keep account synchronization optional, explicit, account-only, and bound to the initiating `auth.uid()` at the database boundary.
+- Keep accounts optional and synchronization account-only, automatic while signed in, and bound to the initiating `auth.uid()` at the database boundary.
 - Do not enable real accounts or collect personal data until PostgreSQL/RLS, configured lifecycle, privacy, retention, export/deletion, and physical-device gates pass.
 - Run the full gate, exact export, independent review, and production parity checks before release.
 

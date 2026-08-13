@@ -44,7 +44,7 @@ Not in current scope: IPv6, multiplayer, public leaderboards, pressure streaks, 
 
 **Status:** Implemented as a production-blocked development vertical slice
 
-The worktree now contains optional verified-email accounts and manual account-only progress synchronization. Anonymous browser history remains separate and is never imported. Signed-in completions use an account-specific browser namespace, and the database binds each synchronization transaction to the user ID that initiated it.
+The worktree now contains optional verified-email accounts and automatic account-only progress synchronization while signed in. Anonymous browser history remains separate and is never imported. Signed-in completions use an account-specific browser namespace, and the database binds each synchronization transaction to the user ID that initiated it.
 
 Production enablement still requires:
 

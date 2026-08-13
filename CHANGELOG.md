@@ -8,7 +8,7 @@ All notable project changes are recorded here.
 
 - Optional passwordless email accounts behind fail-closed public Supabase configuration
 - Account-specific browser progress namespaces; anonymous browser progress remains separate and is never uploaded
-- Manual account-only synchronization through one atomic, expected-user-bound database RPC
+- Automatic account-only synchronization through one atomic, expected-user-bound database RPC when a signed-in session is established and after each signed-in Journey completion
 - Web authentication sessions stored in `sessionStorage`, so a browser-tab session is not restored after that tab is closed
 - Row Level Security, append-only progress grants, authenticated self-service export/deletion, and 25-case pgTAP coverage of ownership, account switching, anonymous denial, bounds, export, and deletion
 

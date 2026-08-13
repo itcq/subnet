@@ -112,15 +112,15 @@ Ship the initial product as a responsive static web application. Mobile browser 
 
 **Status:** Accepted
 
-Anonymous web Journey completion uses a versioned `localStorage` repository behind `LocalProgressRepository`. It survives reloads on the same browser origin. The optional account slice uses a separate user-ID-derived browser namespace and can synchronize only progress completed while signed in after an explicit learner action; anonymous history is never imported.
+Anonymous web Journey completion uses a versioned `localStorage` repository behind `LocalProgressRepository`. It survives reloads on the same browser origin. The optional account slice uses a separate user-ID-derived browser namespace and automatically synchronizes only progress completed while signed in; anonymous history is never imported.
 
-**Consequence:** The app explicitly discloses each storage scope. Malformed, unavailable, quota-limited, or unwritable storage fails closed through accessible load/save handling rather than silently clearing data. Timed scores, ranks, and badges remain session-local and unverified. Account synchronization is a manual snapshot through one atomic expected-user-bound database RPC, not continuous background synchronization.
+**Consequence:** The app explicitly discloses each storage scope. Malformed, unavailable, quota-limited, or unwritable storage fails closed through accessible load/save handling rather than silently clearing data. Timed scores, ranks, and badges remain session-local and unverified. Account synchronization runs automatically through one atomic expected-user-bound database RPC when a signed-in session is established and after signed-in Journey completion. A failed remote write does not discard the account-local completion; a later signed-in trigger retries it.
 
 ## D-015 — Account retention and self-service lifecycle
 
 **Status:** Accepted for the production-blocked account slice
 
-Account and manually synchronized progress rows are retained while the optional account exists. Authenticated learners can download a versioned JSON export and permanently delete their own account after typed confirmation. Database ownership checks bind both operations to `auth.uid()`; deletion cascades through profile/progress rows and removes only the deleted account's browser namespace.
+Account and automatically synchronized signed-in progress rows are retained while the optional account exists. Authenticated learners can download a versioned JSON export and permanently delete their own account after typed confirmation. Database ownership checks bind both operations to `auth.uid()`; deletion cascades through profile/progress rows and removes only the deleted account's browser namespace.
 
 **Consequence:** Anonymous progress remains untouched. No automatic inactive-account purge is promised. Provider log/backup retention and legal/privacy contact fields remain launch-time operational requirements.
 

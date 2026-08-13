@@ -49,11 +49,11 @@ The Journey is untimed. Timed practice is optional and does not gate learning pr
 
 ## Development account slice
 
-The current worktree contains an implemented but production-blocked optional account slice: verified-email create/sign-in, account-specific browser progress, and explicit manual synchronization across browsers and devices. Anonymous progress stays separate and is never uploaded. The account path fails closed without valid public configuration and is not enabled in released v1.0.0.
+The current worktree contains an implemented but production-blocked optional account slice: verified-email create/sign-in, account-specific browser progress, and automatic synchronization of signed-in Journey progress across browsers and devices. Anonymous progress stays separate and is never uploaded. The account path fails closed without valid public configuration and is not enabled in released v1.0.0.
 
 ## Not yet implemented
 
-- Production approval and enablement of the optional account/manual-sync slice
+- Production approval and enablement of the optional account synchronization slice
 - Server-side attempt verification
 - Authoritative public rankings or credentials
 - Account recovery beyond verified-email OTP; authenticated self-service export/deletion is implemented in the production-blocked slice
