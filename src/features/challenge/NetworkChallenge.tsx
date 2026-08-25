@@ -293,9 +293,45 @@ function NetworkChallengeSession({
 
         <View style={styles.tipCard}>
           <Text style={styles.tipBadge}>TIP</Text>
-          <Text style={styles.tipText}>
-            Divide the interesting octet by the block size, then round down to the nearest boundary.
-          </Text>
+          <View style={styles.tipContent}>
+            <Text accessibilityRole="header" style={styles.tipTitle}>FIND THE LOWER BOUNDARY</Text>
+            <Text style={styles.tipText}>
+              Division finds the block number. It does not give you the boundary by itself.
+            </Text>
+            <Text style={styles.tipStep}>1. Divide the interesting octet by the block size.</Text>
+            <Text style={styles.tipStep}>
+              2. Drop the remainder. The whole number is the block number.
+            </Text>
+            <Text style={styles.tipStep}>
+              3. Multiply the block number by the block size.
+            </Text>
+            <Text style={styles.tipStep}>4. The result is the lower boundary.</Text>
+            {!revealFacts && (
+              <Text style={styles.tipExampleLabel}>
+                Try your answer once to unlock a worked example.
+              </Text>
+            )}
+            {revealFacts && (
+              <>
+                <Text style={styles.tipExampleLabel}>
+                  Worked example — separate from your challenge
+                </Text>
+                <Text style={styles.tipStep}>
+                  Here, 77 is the interesting octet and 32 is the block size.
+                </Text>
+                <Text style={styles.tipStep}>1. Divide: 77 ÷ 32 = 2 remainder 13.</Text>
+                <Text style={styles.tipText}>2 is the block number, not the boundary.</Text>
+                <Text style={styles.tipStep}>2. Multiply back: 2 × 32 = 64.</Text>
+                <Text style={styles.tipText}>
+                  64 is the lower boundary, so 77 is inside the 64–95 block.
+                </Text>
+                <Text style={styles.tipConnection}>
+                  The magic-number method lists the same boundaries: 0, 32, 64, 96. Divide and
+                  multiply simply jumps to the same lower multiple.
+                </Text>
+              </>
+            )}
+          </View>
         </View>
 
         <Pressable
@@ -373,7 +409,12 @@ const styles = StyleSheet.create({
   dot: { color: '#61778B', fontSize: 24, fontWeight: '900', marginHorizontal: 4 },
   tipCard: { alignItems: 'flex-start', flexDirection: 'row', gap: 11, marginTop: 20 },
   tipBadge: { backgroundColor: '#243448', borderRadius: 6, color: '#F7C95C', fontSize: 10, fontWeight: '900', overflow: 'hidden', paddingHorizontal: 7, paddingVertical: 4 },
-  tipText: { color: '#8497AA', flex: 1, fontSize: 13, lineHeight: 19 },
+  tipContent: { flex: 1, minWidth: 0 },
+  tipTitle: { color: '#E8EEF5', fontSize: 13, fontWeight: '900', letterSpacing: 0.6 },
+  tipText: { color: '#AAB8C7', fontSize: 13, lineHeight: 19, marginTop: 5 },
+  tipExampleLabel: { color: '#F7C95C', fontSize: 11, fontWeight: '800', marginTop: 13 },
+  tipStep: { color: '#DCE6EF', fontSize: 13, fontWeight: '700', lineHeight: 19, marginTop: 7 },
+  tipConnection: { color: '#8FA3B6', fontSize: 12, lineHeight: 18, marginTop: 10 },
   feedbackCard: { borderRadius: 16, borderWidth: 1, marginTop: 18, padding: 16 },
   successCard: { backgroundColor: '#0E302F', borderColor: '#1D5A50' },
   retryCard: { backgroundColor: '#302817', borderColor: '#6B5726' },

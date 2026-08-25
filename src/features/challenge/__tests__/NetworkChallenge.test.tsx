@@ -73,6 +73,31 @@ describe('NetworkChallenge catalog session UI', () => {
     expect(queryByText(/500/)).toBeNull();
   });
 
+  it('teaches the divide-and-multiply steps before an attempt and unlocks the worked example afterward', async () => {
+    const active = question(3, '10.10.10.200', 27, 'easy');
+    const view = await render(<NetworkChallenge questions={[active]} />);
+
+    expect(view.getByText('FIND THE LOWER BOUNDARY')).toBeTruthy();
+    expect(view.getByText(/1\. Divide the interesting octet by the block size/)).toBeTruthy();
+    expect(view.getByText(/2\. Drop the remainder/)).toBeTruthy();
+    expect(view.getByText(/3\. Multiply the block number by the block size/)).toBeTruthy();
+    expect(view.getByText(/4\. The result is the lower boundary/)).toBeTruthy();
+    expect(view.getByText(/Try your answer once to unlock a worked example/)).toBeTruthy();
+    expect(view.queryByText(/77 ÷ 32 = 2 remainder 13/)).toBeNull();
+    expect(view.queryByText(/64–95 block/)).toBeNull();
+    expect(view.queryByText(/round down to the nearest boundary/)).toBeNull();
+
+    await enterAnswer(view.getByLabelText, active.ip);
+    await fireEvent.press(view.getByRole('button', { name: 'Check answer' }));
+
+    expect(view.getByText(/Worked example — separate from your challenge/)).toBeTruthy();
+    expect(view.getByText(/77 ÷ 32 = 2 remainder 13/)).toBeTruthy();
+    expect(view.getByText(/2 is the block number, not the boundary/)).toBeTruthy();
+    expect(view.getByText(/2 × 32 = 64/)).toBeTruthy();
+    expect(view.getByText(/77 is inside the 64–95 block/)).toBeTruthy();
+    expect(view.getByText(/magic-number method.*0, 32, 64, 96/i)).toBeTruthy();
+  });
+
   it('starts at the first incomplete fixture and shows fixture, tier, and tier progress', async () => {
     const questions = [
       question(99, '10.0.1.70', 27, 'easy'),
