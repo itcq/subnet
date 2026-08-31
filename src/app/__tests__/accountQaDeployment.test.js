@@ -52,6 +52,8 @@ describe('account QA deployment', () => {
 
     expect(workflow).toContain('account-qa');
     expect(workflow).toContain('noindex,nofollow,noarchive');
+    expect(workflow).toContain('npm run verify:release');
+    expect(workflow).toContain("find dist -type f -iname '*.map'");
     expect(workflow).toContain("Disallow: /subnet/account-qa/");
     expect(workflow).toContain("target = root / 'account-qa'");
     expect(workflow).toContain('git diff --cached --quiet');

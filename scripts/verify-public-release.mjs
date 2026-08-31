@@ -3,7 +3,7 @@ import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import artifactPolicy from './release-artifact-policy.cjs';
 
-const { isHtmlDocument } = artifactPolicy;
+const { isAllowedReleaseFileSet, isHtmlDocument } = artifactPolicy;
 const artifactRoot = fileURLToPath(new URL('../dist/', import.meta.url));
 const html = readFileSync(join(artifactRoot, 'index.html'), 'utf8');
 const robots = readFileSync(join(artifactRoot, 'robots.txt'), 'utf8');
@@ -33,8 +33,9 @@ requireCondition(html.includes('https://itcq.github.io/subnet/'), 'canonical pro
 requireCondition(!/noindex|nofollow|noarchive/i.test(html), 'crawler-blocking metadata is present');
 requireCondition(!/Subnet Game Alpha/i.test(html), 'alpha title is present');
 requireCondition(robots === 'User-agent: *\nAllow: /\n', 'robots.txt does not allow public crawling');
-requireCondition(!files.some((file) => file.endsWith('.map')), 'source maps are present');
+requireCondition(!files.some((file) => file.toLowerCase().endsWith('.map')), 'source maps are present');
 requireCondition(!files.some((file) => file.toLowerCase().includes('explore')), '/explore artifact is present');
+requireCondition(isAllowedReleaseFileSet(files), `unexpected release artifact manifest: ${files.join(', ')}`);
 requireCondition(
   htmlFiles.length === 1 && htmlFiles[0] === 'index.html',
   `unexpected public HTML routes: ${htmlFiles.join(', ')}`,
