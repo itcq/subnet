@@ -1,0 +1,132 @@
+name: Account QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/public-registration-progress
+
+concurrency:
+  group: pages-publish
+  cancel-in-progress: false
+
+env:
+  EXPO_PUBLIC_DEPLOY_BASE_URL: /subnet/account-qa
+  EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+  EXPO_PUBLIC_ACCOUNT_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_ACCOUNT_PRIVACY_URL }}
+
+jobs:
+  build:
+    name: Build and verify account QA
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out account candidate without credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Require all public account configuration
+        run: node scripts/validate-public-account-config.mjs
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run project quality gate
+        run: npm run check
+
+      - name: Export account QA artifact
+        run: npm run export:web
+
+      - name: Finalize and verify unlisted QA artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run verify:release
+          python3 - <<'PY'
+          from pathlib import Path
+
+          html_path = Path('dist/index.html')
+          html = html_path.read_text()
+          marker = '<meta name="robots" content="noindex,nofollow,noarchive" />'
+          if '</head>' not in html:
+              raise SystemExit('QA HTML is missing </head>')
+          html_path.write_text(html.replace('</head>', f'{marker}</head>', 1))
+          Path('dist/robots.txt').write_text('User-agent: *\nDisallow: /subnet/account-qa/\n')
+          PY
+          test -f dist/.nojekyll
+          test "$(find dist -type f -name '*.html' | wc -l)" -eq 1
+          grep -Fq 'noindex,nofollow,noarchive' dist/index.html
+          grep -Fq '/subnet/account-qa/_expo/' dist/index.html
+          ! find dist -type f -iname '*.map' -print -quit | grep -q .
+          ! grep -R -E -i 'service.role|secret.key' dist
+
+      - name: Upload verified QA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: account-qa-${{ github.sha }}
+          path: dist
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    name: Publish unlisted account QA
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out current GitHub Pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 1
+          path: gh-pages
+
+      - name: Download verified QA artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: account-qa-${{ github.sha }}
+          path: verified-account-qa
+
+      - name: Publish only the account QA subdirectory
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f verified-account-qa/.nojekyll
+          grep -Fq 'noindex,nofollow,noarchive' verified-account-qa/index.html
+          grep -Fq '/subnet/account-qa/_expo/' verified-account-qa/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+
+          root = Path('gh-pages')
+          source = Path('verified-account-qa')
+          target = root / 'account-qa'
+          if target.exists():
+              shutil.rmtree(target)
+          shutil.copytree(source, target)
+          PY
+          cd gh-pages
+          git add -A account-qa
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --cached --quiet; then
+            echo 'Account QA artifact is already current.'
+            exit 0
+          fi
+          git commit -m "Deploy account QA from ${GITHUB_SHA}"
+          git push origin HEAD:gh-pages

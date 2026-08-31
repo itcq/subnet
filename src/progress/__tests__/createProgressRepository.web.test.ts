@@ -5,7 +5,7 @@ import type { LocalQuestionProgress } from '../localProgressRepository';
 type WebFactoryModule = typeof import('../createProgressRepository');
 
 const WEB_NOTICE =
-  'Journey progress is saved in this browser. It does not sync across devices yet.';
+  'Anonymous Journey progress stays in this browser. Signed-in progress syncs to your account automatically.';
 
 class MemoryStorage implements Storage {
   private readonly values = new Map<string, string>();
@@ -31,7 +31,7 @@ describe('base progress repository factory', () => {
     });
 
     try {
-      const { createProgressRepository } = loadBaseFactory();
+      const { clearAccountProgressRepository, createAccountProgressRepository, createProgressRepository } = loadBaseFactory();
       const first = createProgressRepository();
       const second = createProgressRepository();
       const completion: LocalQuestionProgress = {
@@ -54,6 +54,33 @@ describe('base progress repository factory', () => {
       await expect(second.repository.listCompleted('catalog-v1')).resolves.toEqual([
         completion,
       ]);
+
+      const accountOne = createAccountProgressRepository('user-one');
+      const accountOneAgain = createAccountProgressRepository('user-one');
+      const accountTwo = createAccountProgressRepository('user-two');
+      expect(accountOneAgain).toBe(accountOne);
+      expect(accountTwo).not.toBe(accountOne);
+      expect(accountOne).not.toBe(first.repository);
+
+      await accountOne.initialize();
+      await accountTwo.initialize();
+      await accountOne.recordCompletion({ ...completion, questionId: 'question-2', ordinal: 2 });
+      await expect(accountOne.listCompleted('catalog-v1')).resolves.toHaveLength(1);
+      await expect(accountTwo.listCompleted('catalog-v1')).resolves.toEqual([]);
+      await expect(first.repository.listCompleted('catalog-v1')).resolves.toEqual([completion]);
+
+      clearAccountProgressRepository('user-one');
+      expect(storage.getItem('subnet-game:account-progress:v1:user-one')).toBeNull();
+      expect(createAccountProgressRepository('user-one')).not.toBe(accountOne);
+      await expect(first.repository.listCompleted('catalog-v1')).resolves.toEqual([completion]);
+
+      const accountWithBlockedStorage = createAccountProgressRepository('blocked-user');
+      const removeItem = jest.spyOn(storage, 'removeItem').mockImplementationOnce(() => {
+        throw new Error('storage unavailable');
+      });
+      expect(() => clearAccountProgressRepository('blocked-user')).toThrow('storage unavailable');
+      expect(createAccountProgressRepository('blocked-user')).not.toBe(accountWithBlockedStorage);
+      removeItem.mockRestore();
     } finally {
       if (originalStorage === undefined) {
         delete (globalThis as { localStorage?: Storage }).localStorage;

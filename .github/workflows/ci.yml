@@ -3,8 +3,6 @@ name: CI
 on:
   pull_request:
   push:
-    branches:
-      - main
 
 permissions:
   contents: read
@@ -14,6 +12,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  backend:
+    name: Supabase migration and pgTAP authorization
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Start local Supabase
+        run: npm run backend:start
+
+      - name: Apply migrations from a clean database
+        run: npm run backend:reset
+
+      - name: Run pgTAP authorization suite
+        run: npm run backend:test
+
   verify:
     name: Test, lint, typecheck, doctor, and export
     runs-on: ubuntu-latest

@@ -44,7 +44,10 @@ export class BrowserProgressRepository implements LocalProgressRepository {
   private storage: Storage | null = null;
   private initialized = false;
 
-  constructor(private readonly resolveStorage: BrowserStorageResolver) {}
+  constructor(
+    private readonly resolveStorage: BrowserStorageResolver,
+    private readonly storageKey: string = BROWSER_PROGRESS_STORAGE_KEY,
+  ) {}
 
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -54,7 +57,7 @@ export class BrowserProgressRepository implements LocalProgressRepository {
     const storage = this.resolveStorage();
     const nextMemory = new InMemoryProgressRepository();
     const nextRecords = new Map<string, LocalQuestionProgress>();
-    const serialized = storage.getItem(BROWSER_PROGRESS_STORAGE_KEY);
+    const serialized = storage.getItem(this.storageKey);
     if (serialized !== null) {
       const payload = parsePayload(serialized);
       for (const record of payload.records) {
@@ -104,7 +107,7 @@ export class BrowserProgressRepository implements LocalProgressRepository {
           left.ordinal - right.ordinal,
       ),
     };
-    this.storage?.setItem(BROWSER_PROGRESS_STORAGE_KEY, JSON.stringify(payload));
+    this.storage?.setItem(this.storageKey, JSON.stringify(payload));
     this.records.clear();
     for (const [key, record] of nextRecords) {
       this.records.set(key, record);

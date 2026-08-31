@@ -47,7 +47,7 @@ export function generateQuestion(
     return Object.freeze({
       id: `${config.tier}-${String(ordinal).padStart(3, '0')}`,
       ordinal,
-      catalogVersion: 'ipv4-network-v1',
+      catalogVersion: '17dd300a',
       tier: config.tier,
       type: 'network-address',
       ip,

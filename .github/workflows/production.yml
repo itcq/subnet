@@ -1,0 +1,142 @@
+name: Production
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: pages-publish
+  cancel-in-progress: false
+
+env:
+  EXPO_PUBLIC_DEPLOY_BASE_URL: /subnet
+  EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+  EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+  EXPO_PUBLIC_ACCOUNT_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_ACCOUNT_PRIVACY_URL }}
+
+jobs:
+  build:
+    name: Build and verify production
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out production source without credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Require browser-safe production account configuration
+        run: node scripts/validate-public-account-config.mjs
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Run project quality gate
+        run: npm run check
+
+      - name: Export production artifact
+        run: npm run export:web
+
+      - name: Verify public production artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run verify:release
+          test -f dist/.nojekyll
+          test "$(find dist -type f -name '*.html' | wc -l)" -eq 1
+          grep -Fq '/subnet/_expo/' dist/index.html
+          ! grep -Fq 'noindex,nofollow,noarchive' dist/index.html
+          grep -Fq 'Allow: /' dist/robots.txt
+          ! find dist -type f -iname '*.map' -print -quit | grep -q .
+          ! grep -R -E -i 'service.role|secret.key' dist
+
+      - name: Upload verified production artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: production-${{ github.sha }}
+          path: dist
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish production
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out current GitHub Pages branch
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          fetch-depth: 1
+          path: gh-pages
+
+      - name: Download verified production artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: production-${{ github.sha }}
+          path: verified-production
+
+      - name: Replace production root and preserve account QA
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f verified-production/.nojekyll
+          grep -Fq '/subnet/_expo/' verified-production/index.html
+          ! grep -Fq 'noindex,nofollow,noarchive' verified-production/index.html
+          test -f gh-pages/account-qa/index.html
+          python3 - <<'PY'
+          from pathlib import Path
+          import shutil
+
+          root = Path('gh-pages')
+          source = Path('verified-production')
+          preserve_names = {'.git', 'account-qa'}
+
+          for child in root.iterdir():
+              if child.name in preserve_names:
+                  continue
+              if child.is_dir():
+                  shutil.rmtree(child)
+              else:
+                  child.unlink()
+
+          for child in source.iterdir():
+              target = root / child.name
+              if child.is_dir():
+                  shutil.copytree(child, target)
+              else:
+                  shutil.copy2(child, target)
+          PY
+          test -f gh-pages/account-qa/index.html
+          cd gh-pages
+          git add -A
+          if git diff --cached --name-only | grep -q '^account-qa/'; then
+            echo 'Production deployment attempted to modify account QA.' >&2
+            exit 1
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --cached --quiet; then
+            echo 'Production artifact is already current.'
+            exit 0
+          fi
+          git commit -m "Deploy production from ${GITHUB_SHA}"
+          git push origin HEAD:gh-pages

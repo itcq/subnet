@@ -2,7 +2,11 @@
 
 const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
-const { isHtmlDocument } = require(join(process.cwd(), 'scripts/release-artifact-policy.cjs'));
+const {
+  expectedFixedReleaseFiles,
+  isAllowedReleaseFileSet,
+  isHtmlDocument,
+} = require(join(process.cwd(), 'scripts/release-artifact-policy.cjs'));
 
 function readProjectFile(path) {
   return readFileSync(join(process.cwd(), path), 'utf8');
@@ -46,6 +50,26 @@ describe('public release metadata', () => {
     expect(isHtmlDocument('entry.js')).toBe(false);
   });
 
+  it('allows only the exact fixed release manifest plus one hashed entry bundle', () => {
+    const entryBundle = '_expo/static/js/web/entry-0123456789abcdef0123456789abcdef.js';
+    const validFiles = [...expectedFixedReleaseFiles, entryBundle];
+
+    expect(isAllowedReleaseFileSet(validFiles)).toBe(true);
+    expect(isAllowedReleaseFileSet([...validFiles, 'unexpected.txt'])).toBe(false);
+    expect(isAllowedReleaseFileSet([...validFiles, 'unexpected.MAP'])).toBe(false);
+    expect(isAllowedReleaseFileSet(validFiles.filter((file) => file !== 'robots.txt'))).toBe(false);
+    expect(
+      isAllowedReleaseFileSet([
+        ...validFiles.filter((file) => file !== 'robots.txt'),
+        'unexpected.txt',
+      ]),
+    ).toBe(false);
+    expect(isAllowedReleaseFileSet([...validFiles, entryBundle.replace('0', 'a')])).toBe(false);
+    expect(readProjectFile('scripts/verify-public-release.mjs')).toContain(
+      'isAllowedReleaseFileSet(files)',
+    );
+  });
+
   it('records the verified public release consistently', () => {
     const changelog = readProjectFile('CHANGELOG.md');
     const alphaGuide = readProjectFile('docs/ALPHA_TESTER_GUIDE.md');
@@ -58,6 +82,32 @@ describe('public release metadata', () => {
     expect(projectOverview).toContain('**Stage:** Public production web release');
     expect(projectStatus).toContain('Released:');
     expect(projectStatus).toContain('https://itcq.github.io/subnet/');
+  });
+
+  it('keeps current-state documents aligned with the production-blocked account slice', () => {
+    const currentStateDocs = [
+      'docs/PROJECT_OVERVIEW.md',
+      'docs/PROJECT_STATUS.md',
+      'docs/ALPHA_TESTER_GUIDE.md',
+      'docs/ARCHITECTURE.md',
+    ];
+
+    for (const document of currentStateDocs) {
+      const content = readProjectFile(document);
+      expect(content).not.toMatch(/accounts do not exist/i);
+      expect(content).not.toMatch(/no account or cross-device synchronization/i);
+      expect(content).not.toMatch(/registration or sign-in ui\s*$/im);
+    }
+
+    expect(readProjectFile('docs/PROJECT_OVERVIEW.md')).toContain(
+      'implemented but production-blocked optional account slice',
+    );
+    expect(readProjectFile('docs/PROJECT_STATUS.md')).toContain(
+      'implemented but production-blocked optional account slice',
+    );
+    expect(readProjectFile('docs/ALPHA_TESTER_GUIDE.md')).toContain(
+      'implemented but production-blocked optional account slice',
+    );
   });
 
   it('clears persistent bundler state for canonical production exports', () => {

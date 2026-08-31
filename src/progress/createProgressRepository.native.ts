@@ -17,3 +17,9 @@ const runtime: ProgressRepositoryRuntime = Object.freeze({
 export function createProgressRepository(): ProgressRepositoryRuntime {
   return runtime;
 }
+
+export function createAccountProgressRepository(
+  _userId: string,
+): LocalProgressRepository {
+  throw new Error('Account progress storage is not available on this platform yet.');
+}
