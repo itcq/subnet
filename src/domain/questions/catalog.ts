@@ -4,7 +4,7 @@ import { getTierConfig } from './tierConfig';
 import type { SubnetQuestion } from './types';
 import { validateCatalog } from './validateCatalog';
 
-export const CATALOG_VERSION = 'ipv4-network-v1' as const;
+export const CATALOG_VERSION = '17dd300a' as const;
 export const CATALOG_SEED = 'ipv4-network-v1-release-1' as const;
 
 const MAX_ATTEMPTS_PER_QUESTION = 1_000;

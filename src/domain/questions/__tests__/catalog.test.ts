@@ -93,6 +93,7 @@ describe('subnet question catalog', () => {
     const digest = catalogFingerprint(signatures);
 
     expect(digest).toBe('17dd300a');
+    expect(CATALOG_VERSION).toBe(digest);
   });
 
   it('passes complete catalog validation', () => {

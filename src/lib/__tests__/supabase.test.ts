@@ -46,4 +46,25 @@ describe('createSupabaseClient', () => {
       },
     );
   });
+
+  it('uses an explicitly supplied web session store', () => {
+    const webStorage = {
+      getItem: jest.fn(),
+      setItem: jest.fn(),
+      removeItem: jest.fn(),
+    };
+
+    createSupabaseClient(
+      { url: 'https://example.supabase.co', publishableKey: 'publishable-key' },
+      webStorage,
+    );
+
+    expect(mockedCreateClient).toHaveBeenLastCalledWith(
+      'https://example.supabase.co',
+      'publishable-key',
+      expect.objectContaining({
+        auth: expect.objectContaining({ storage: webStorage }),
+      }),
+    );
+  });
 });

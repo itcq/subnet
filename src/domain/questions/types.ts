@@ -3,7 +3,7 @@ export type DifficultyTier = 'easy' | 'intermediate' | 'hard' | 'hardest';
 export type SubnetQuestion = {
   readonly id: string;
   readonly ordinal: number;
-  readonly catalogVersion: 'ipv4-network-v1';
+  readonly catalogVersion: '17dd300a';
   readonly tier: DifficultyTier;
   readonly type: 'network-address';
   readonly ip: string;

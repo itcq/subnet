@@ -103,7 +103,7 @@ Do not include passwords, private account information, or sensitive personal inf
 
 ## Known limitations
 
-- No account or cross-device synchronization
+- Released v1.0.0 has no configured account backend or cross-device synchronization. The current worktree contains an implemented but production-blocked optional account slice; do not test it with real personal data until the documented production gates pass.
 - Timed scores/ranks/badges are session-local
 - No server-authoritative scores or rankings
 - No verified public badges or credentials

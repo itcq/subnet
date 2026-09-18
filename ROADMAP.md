@@ -40,20 +40,21 @@ This roadmap separates implemented capability from planned work. Dates are omitt
 
 Not in current scope: IPv6, multiplayer, public leaderboards, pressure streaks, or outcome promises.
 
-## Milestone 3 — Cross-device continuity decision
+## Milestone 3 — Optional account continuity
 
-**Status:** Optional; demand-driven
+**Status:** Implemented as a production-blocked development vertical slice
 
-Browser-local storage does not sync phone and desktop. If learner evidence shows cross-device continuity is important, evaluate a standalone account vertical slice with:
+The worktree now contains optional verified-email accounts and automatic account-only progress synchronization while signed in. Anonymous browser history remains separate and is never imported. Signed-in completions use an account-specific browser namespace, and the database binds each synchronization transaction to the user ID that initiated it.
 
-- Explicit authentication and recovery
-- Least-data collection
-- Row Level Security and cross-user denial tests
-- Idempotent attempt synchronization
-- Account export/deletion and retention policy
-- Clear separation of local practice from server-verified state
+Production enablement still requires:
 
-Do not introduce accounts merely to replace a problem browser storage already solves.
+- Real PostgreSQL execution of the RLS/25-case pgTAP suite
+- Configured OTP, two-account, sign-out, and account-switch lifecycle E2E
+- Production verification of the implemented authenticated export/deletion flows and completion of provider retention/privacy fields
+- Project-owned SMTP, rate limits, allowed origins, and delivery monitoring
+- Physical iPhone Safari/WebKit acceptance
+
+Accounts remain optional and fail closed when public configuration is absent. Do not enable them merely to replace a problem browser storage already solves.
 
 ## Milestone 4 — Operations and reporting
 

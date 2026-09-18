@@ -45,6 +45,34 @@ describe('BrowserProgressRepository', () => {
     await expect(repository.listCompleted('catalog-v1')).resolves.toEqual([]);
   });
 
+  it('isolates account progress under separate browser storage keys', async () => {
+    const storage = new MemoryStorage();
+    const accountOne = new BrowserProgressRepository(
+      () => storage,
+      'subnet-game:account-progress:v1:user-one',
+    );
+    const accountTwo = new BrowserProgressRepository(
+      () => storage,
+      'subnet-game:account-progress:v1:user-two',
+    );
+    await accountOne.initialize();
+    await accountTwo.initialize();
+
+    await accountOne.recordCompletion({
+      catalogVersion: 'catalog-v1',
+      questionId: 'question-1',
+      ordinal: 1,
+      completedAt: '2026-08-04T04:30:00.000Z',
+      attemptCount: 1,
+      pendingSync: false,
+    });
+
+    await expect(accountOne.listCompleted('catalog-v1')).resolves.toHaveLength(1);
+    await expect(accountTwo.listCompleted('catalog-v1')).resolves.toEqual([]);
+    expect(storage.getItem('subnet-game:account-progress:v1:user-one')).not.toBeNull();
+    expect(storage.getItem('subnet-game:account-progress:v1:user-two')).toBeNull();
+  });
+
   it('restores a completion after a browser reload', async () => {
     const storage = new MemoryStorage();
     const completion = {

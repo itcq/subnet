@@ -76,6 +76,22 @@ describe('useLocalProgress', () => {
     expect(progressRepository.initialize).toHaveBeenCalledTimes(1);
   });
 
+  it('adopts synchronized ordinals without re-entering the loading state', async () => {
+    const progressRepository = repository({
+      listCompleted: jest.fn().mockResolvedValue([completion(1)]),
+    });
+    const { result } = await renderHook(() =>
+      useLocalProgress(progressRepository, 'catalog-v1'),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => result.current.adoptCompletedOrdinals([3, 1, 2, 3]));
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.completedOrdinals).toEqual([1, 2, 3]);
+    expect(Object.isFrozen(result.current.completedOrdinals)).toBe(true);
+  });
+
   it('surfaces a friendly load error and retries hydration without remounting', async () => {
     const retryInitialization = deferred<void>();
     const progressRepository = repository({
@@ -126,6 +142,25 @@ describe('useLocalProgress', () => {
     await act(async () => result.current.retry());
     await waitFor(() => expect(result.current.completedOrdinals).toEqual([2]));
 
+    expect(progressRepository.initialize).toHaveBeenCalledTimes(1);
+    expect(progressRepository.listCompleted).toHaveBeenCalledTimes(2);
+  });
+
+  it('refreshes completed ordinals after an external account sync', async () => {
+    let rows: readonly LocalQuestionProgress[] = [];
+    const progressRepository = repository({
+      listCompleted: jest.fn(async () => rows),
+    });
+    const { result } = await renderHook(() =>
+      useLocalProgress(progressRepository, 'catalog-v1'),
+    );
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect(result.current.completedOrdinals).toEqual([]);
+
+    rows = [completion(2), completion(4)];
+    await act(async () => result.current.refresh());
+
+    await waitFor(() => expect(result.current.completedOrdinals).toEqual([2, 4]));
     expect(progressRepository.initialize).toHaveBeenCalledTimes(1);
     expect(progressRepository.listCompleted).toHaveBeenCalledTimes(2);
   });

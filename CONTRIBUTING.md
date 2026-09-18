@@ -53,8 +53,8 @@ Do not merge backend authorization changes when the database tests could not run
 
 - `src/domain/` contains pure framework-independent business logic.
 - UI components may call domain functions but must not duplicate subnet answers.
-- Session secrets use Expo SecureStore.
-- Web Journey completion uses the versioned browser repository.
+- Web account session material uses tab-scoped `sessionStorage`; deferred native account work may use Expo SecureStore only after separate review.
+- Anonymous and account Journey completion use separate versioned browser repositories.
 - Native SQLite remains dormant future infrastructure.
 - Supabase service-role and email-provider credentials are server-only.
 - The client cannot assign roles, authoritative progress, or permanent badges.

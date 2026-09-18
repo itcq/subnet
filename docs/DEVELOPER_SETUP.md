@@ -1,6 +1,6 @@
 # Developer Setup and Web Build Guide
 
-**Last revised:** 2026-08-04
+**Last revised:** 2026-08-12
 
 ## Product target
 
@@ -26,7 +26,21 @@ npm start
 
 `npm start` launches the web target. `npm run web` is the explicit equivalent.
 
-No environment variables are required for the current local curriculum. Never place service-role, SMTP, database, signing, or other secrets in `EXPO_PUBLIC_*` variables.
+## Optional local account backend
+
+The released v1.0.0 curriculum needs no backend. Testing the development account slice additionally requires Docker and the Supabase CLI.
+
+```bash
+cp .env.example .env
+npm run backend:start
+# Put only the printed local publishable key and loopback URL in .env.
+npm run backend:reset
+npm run backend:test
+```
+
+Account enablement requires all three public values: Supabase URL, Supabase publishable key, and an HTTPS `EXPO_PUBLIC_ACCOUNT_PRIVACY_URL`. Missing or malformed values keep accounts unavailable. Web auth sessions use `sessionStorage`. Anonymous Journey completion uses `subnet-game:journey-progress:v1`; account Journey completion uses a separate user-ID-derived `localStorage` namespace. Automatic synchronization sends only signed-in account rows through the expected-user-bound `sync_account_progress` RPC. Authenticated export and deletion use `export_account_data` and `delete_own_account`; deletion removes the account-specific browser namespace without touching anonymous progress. Never place service-role, SMTP, database, signing, or other secrets in `EXPO_PUBLIC_*` variables.
+
+GitHub Actions runs the real Supabase migration and pgTAP suite on every pushed branch and pull request. Production enablement still requires the same suite against the exact target project plus the operational gates in `docs/PRODUCTION_ACCOUNT_RUNBOOK.md`.
 
 ## Quality gate
 
@@ -78,8 +92,9 @@ Check octet input bounds, touch targets, keyboard behavior, horizontal overflow,
 - Use strict RED→GREEN→REFACTOR TDD for behavior changes.
 - Keep `src/domain/subnet.ts` independent of UI and persistence.
 - Keep Guided Practice isolated from competitive and persisted Journey state.
-- Never label browser-local state as cloud-synced or authoritative.
-- Do not connect real accounts or personal data without a separate approved security vertical slice.
+- Never label anonymous browser-local state as cloud-synced or authoritative.
+- Keep accounts optional and synchronization account-only, automatic while signed in, and bound to the initiating `auth.uid()` at the database boundary.
+- Do not enable real accounts or collect personal data until PostgreSQL/RLS, configured lifecycle, privacy, retention, export/deletion, and physical-device gates pass.
 - Run the full gate, exact export, independent review, and production parity checks before release.
 
 ## Deferred native work

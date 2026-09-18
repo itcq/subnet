@@ -45,7 +45,7 @@ export function validateCatalog(
     }
     signatures.add(signature);
 
-    if (question.catalogVersion !== 'ipv4-network-v1') {
+    if (question.catalogVersion !== '17dd300a') {
       throw new Error(`Invalid catalog version for question ${question.id}`);
     }
     if (question.tier !== config.tier || !config.prefixes.includes(question.prefix)) {
