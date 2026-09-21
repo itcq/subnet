@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppNavigation, type AppScreen } from '@/components/AppNavigation';
 import { createPublicAccountRuntime } from '@/auth/accountRuntime';
 import type { AccountIdentity } from '@/auth/accountAuth';
 import type { LocalTimedResult } from '@/domain/achievements/achievements';
@@ -19,10 +20,12 @@ import { AccountRegistration } from '@/features/account/AccountRegistration';
 import { downloadAccountDataExport } from '@/features/account/downloadAccountDataExport';
 import { LocalAchievements } from '@/features/achievements/LocalAchievements';
 import { NetworkChallenge } from '@/features/challenge/NetworkChallenge';
+import { GlobalScoreboard } from '@/features/leaderboard/GlobalScoreboard';
 import { GuidedPractice } from '@/features/learning/GuidedPractice';
 import { LearnSubnetting } from '@/features/learning/LearnSubnetting';
 import { TimedChallenge } from '@/features/timed/TimedChallenge';
 import { TimedModeSetup } from '@/features/timed/TimedModeSetup';
+import { SiteInformationPage } from '@/features/site/SiteInformationPage';
 import { AccountProgressSync } from '@/progress/accountProgressSync';
 import {
   clearAccountProgressRepository,
@@ -34,6 +37,10 @@ import { useLocalProgress } from '@/progress/useLocalProgress';
 const progressRuntime = createProgressRepository();
 const accountRuntime = createPublicAccountRuntime();
 const TAGLINE = 'Learn subnetting one short lesson at a time.';
+const configuredSupportEmail = process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim() ?? '';
+const SUPPORT_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configuredSupportEmail)
+  ? configuredSupportEmail
+  : null;
 
 function resolveJourneyQuestionId(ordinal: number): string {
   const question = subnetQuestionCatalog[ordinal - 1];
@@ -43,18 +50,6 @@ function resolveJourneyQuestionId(ordinal: number): string {
   return question.id;
 }
 
-type Screen =
-  | 'menu'
-  | 'account'
-  | 'challenge'
-  | 'learning-practice'
-  | 'timed-setup'
-  | 'timed'
-  | 'achievements'
-  | 'learn'
-  | 'how-to-play'
-  | 'journey'
-  | 'completion';
 
 function LaunchIdentity() {
   return (
@@ -214,7 +209,7 @@ export default function HomeScreen() {
         // next signed-in completion or restored account session.
       });
   }, [accountProgressSync, adoptCompletedOrdinals]);
-  const [screen, setScreen] = useState<Screen>('menu');
+  const [screen, setScreen] = useState<AppScreen>('menu');
   const [guidedLessonOpen, setGuidedLessonOpen] = useState(false);
   const [timedResults, setTimedResults] = useState<readonly LocalTimedResult[]>([]);
   const [timedDurationSeconds, setTimedDurationSeconds] = useState<120 | 240>(120);
@@ -254,7 +249,7 @@ export default function HomeScreen() {
     };
   }, [handleAccountIdentityChange]);
 
-  const navigateTo = (nextScreen: Screen) => {
+  const navigateTo = (nextScreen: AppScreen) => {
     resetLocalScroll();
     if (nextScreen !== 'learn') {
       setGuidedLessonOpen(false);
@@ -342,9 +337,18 @@ export default function HomeScreen() {
         ? 'VIEW COMPLETED JOURNEY'
         : 'CONTINUE JOURNEY';
 
+  const navigation = (
+    <AppNavigation
+      currentScreen={screen}
+      onNavigate={navigateTo}
+      signedIn={accountIdentity !== null}
+    />
+  );
+
   if (screen === 'challenge') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <View style={styles.challengeHeader}>
           <BackButton onPress={() => navigateTo('menu')} />
         </View>
@@ -388,6 +392,7 @@ export default function HomeScreen() {
   if (screen === 'learning-practice') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <GuidedPractice onBack={() => navigateTo('learn')} />
       </SafeAreaView>
     );
@@ -396,6 +401,7 @@ export default function HomeScreen() {
   if (screen === 'timed-setup') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <PersistenceNotice />
         <View style={styles.challengeContainer}>
           <TimedModeSetup
@@ -414,6 +420,7 @@ export default function HomeScreen() {
   if (screen === 'timed') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <View style={styles.challengeHeader}>
           <BackButton onPress={() => navigateTo('menu')} />
         </View>
@@ -435,6 +442,7 @@ export default function HomeScreen() {
     const accountDataService = accountRuntime.dataService;
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <AccountRegistration
           key={accountIdentity?.userId ?? 'anonymous-account'}
           onBack={() => navigateTo('menu')}
@@ -485,6 +493,7 @@ export default function HomeScreen() {
   if (screen === 'achievements') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <ScrollView
           ref={localScreenScrollRef}
           key="achievements"
@@ -504,6 +513,7 @@ export default function HomeScreen() {
   if (screen === 'learn') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <PersistenceNotice />
         <View style={styles.challengeContainer}>
           <LearnSubnetting
@@ -517,9 +527,35 @@ export default function HomeScreen() {
     );
   }
 
+  if (screen === 'scoreboard') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
+        <GlobalScoreboard
+          identity={accountIdentity}
+          service={accountRuntime.leaderboardService}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (screen === 'terms' || screen === 'site-map' || screen === 'contact') {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
+        <SiteInformationPage
+          onNavigate={navigateTo}
+          page={screen}
+          supportEmail={SUPPORT_EMAIL}
+        />
+      </SafeAreaView>
+    );
+  }
+
   if (screen === 'completion') {
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <ScrollView
           ref={localScreenScrollRef}
           key="completion"
@@ -547,6 +583,7 @@ export default function HomeScreen() {
     const isHowToPlay = screen === 'how-to-play';
     return (
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        {navigation}
         <ScrollView
           ref={localScreenScrollRef}
           key={screen}
@@ -594,6 +631,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      {navigation}
       <ScrollView
         ref={localScreenScrollRef}
         key="menu"
@@ -633,6 +671,7 @@ export default function HomeScreen() {
             <MenuButton label="LEARN SUBNETTING" onPress={() => navigateTo('learn')} />
             <MenuButton label="PLAY TIMED MODE" onPress={() => navigateTo('timed-setup')} />
             <MenuButton label="LOCAL RANK & BADGES" onPress={() => navigateTo('achievements')} />
+            <MenuButton label="GLOBAL SCOREBOARD" onPress={() => navigateTo('scoreboard')} />
             <MenuButton label="HOW TO PLAY" onPress={() => navigateTo('how-to-play')} />
             <MenuButton label="VIEW JOURNEY" onPress={() => navigateTo('journey')} />
             <MenuButton

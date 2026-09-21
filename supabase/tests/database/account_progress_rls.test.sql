@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(25);
+select plan(37);
 
 insert into auth.users (id, email) values
   ('11111111-1111-4111-8111-111111111111', 'user-one@example.test'),
@@ -53,7 +53,7 @@ select results_eq(
 
 select is(
   (public.export_account_data('11111111-1111-4111-8111-111111111111')->>'schema_version')::integer,
-  1,
+  2,
   'an owner can export a versioned account-data document'
 );
 
@@ -65,6 +65,67 @@ select results_eq(
     order by 1$$,
   array[1, 3],
   'an account export contains only the owner synced progress'
+);
+
+select is(
+  (select leaderboard_opt_in from public.profiles
+   where id = '11111111-1111-4111-8111-111111111111'),
+  false,
+  'scoreboard participation defaults to disabled'
+);
+
+select lives_ok(
+  $$select * from public.update_leaderboard_profile(
+      '11111111-1111-4111-8111-111111111111',
+      'Alpha Learner',
+      true
+    )$$,
+  'an authenticated owner can opt into the scoreboard'
+);
+
+select results_eq(
+  $$select public_name || ':' || leaderboard_opt_in::text
+    from public.get_my_leaderboard_profile(
+      '11111111-1111-4111-8111-111111111111'
+    )$$,
+  array['Alpha Learner:true'],
+  'an owner can read their own scoreboard settings'
+);
+
+select is(
+  public.export_account_data('11111111-1111-4111-8111-111111111111')
+    ->'scoreboard'->>'public_name',
+  'Alpha Learner',
+  'an account export includes the owner public scoreboard name'
+);
+
+select is(
+  (public.export_account_data('11111111-1111-4111-8111-111111111111')
+    ->'scoreboard'->>'leaderboard_opt_in')::boolean,
+  true,
+  'an account export includes the owner scoreboard visibility choice'
+);
+
+select throws_ok(
+  $$select * from public.update_leaderboard_profile(
+      '22222222-2222-4222-8222-222222222222',
+      'Stolen Name',
+      true
+    )$$,
+  '42501',
+  'account identity changed while updating scoreboard settings',
+  'an account cannot change another account scoreboard settings'
+);
+
+select throws_ok(
+  $$select * from public.update_leaderboard_profile(
+      '11111111-1111-4111-8111-111111111111',
+      'learner@example.test',
+      true
+    )$$,
+  '22023',
+  'public name must be 3 to 24 approved characters',
+  'email addresses cannot be used as public scoreboard names'
 );
 
 select throws_ok(
@@ -187,7 +248,55 @@ select throws_ok(
 );
 
 reset role;
+set local role authenticated;
+set local request.jwt.claim.sub = '22222222-2222-4222-8222-222222222222';
+
+select lives_ok(
+  $$select * from public.update_leaderboard_profile(
+      '22222222-2222-4222-8222-222222222222',
+      'Beta Learner',
+      true
+    )$$,
+  'a second authenticated owner can opt into the scoreboard'
+);
+
+reset role;
 set local role anon;
+
+select results_eq(
+  $$select public_name || ':' || rank_position::text || ':' || completed_count::text
+    from public.list_global_scoreboard('17dd300a')
+    order by rank_position, public_name$$,
+  array['Alpha Learner:1:2', 'Beta Learner:2:1'],
+  'anonymous viewers see only opted-in public names and verified completion totals'
+);
+
+select throws_ok(
+  $$select * from public.get_my_leaderboard_profile(
+      '11111111-1111-4111-8111-111111111111'
+    )$$,
+  '42501',
+  'permission denied for function get_my_leaderboard_profile',
+  'anonymous sessions cannot read private scoreboard settings'
+);
+
+select throws_ok(
+  $$select * from public.update_leaderboard_profile(
+      '11111111-1111-4111-8111-111111111111',
+      'Anonymous Change',
+      true
+    )$$,
+  '42501',
+  'permission denied for function update_leaderboard_profile',
+  'anonymous sessions cannot change scoreboard settings'
+);
+
+select throws_ok(
+  $$select * from public.list_global_scoreboard('unsupported')$$,
+  '22023',
+  'unsupported progress catalog',
+  'public scoreboard requests are restricted to the current catalog'
+);
 
 select throws_ok(
   'select count(*) from public.user_question_progress',

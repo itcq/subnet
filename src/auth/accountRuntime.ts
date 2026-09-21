@@ -17,6 +17,10 @@ import {
   createSupabaseProgressGateway,
   type SupabaseProgressClient,
 } from '../progress/supabaseProgressGateway';
+import {
+  createSupabaseLeaderboardGateway,
+  LeaderboardService,
+} from '@/leaderboard/leaderboard';
 
 type AccountConfig = Readonly<{
   url: string;
@@ -26,10 +30,11 @@ type AccountConfig = Readonly<{
 type AccountClient = SupabaseAuthClient & SupabaseProgressClient & SupabaseAccountDataClient;
 export type AccountRuntime = Readonly<{
   configured: boolean;
-  dataService: AccountDataService | null;
-  privacyNoticeUrl: string | null;
-  progressGateway: RemoteProgressGateway | null;
   service: AccountAuthService | null;
+  dataService: AccountDataService | null;
+  leaderboardService: LeaderboardService | null;
+  progressGateway: RemoteProgressGateway | null;
+  privacyNoticeUrl: string | null;
 }>;
 type Dependencies = Readonly<{
   createClient(config: AccountConfig): AccountClient;
@@ -50,10 +55,11 @@ const defaultDependencies: Dependencies = {
 
 const UNAVAILABLE_RUNTIME: AccountRuntime = Object.freeze({
   configured: false,
-  dataService: null,
-  privacyNoticeUrl: null,
-  progressGateway: null,
   service: null,
+  dataService: null,
+  leaderboardService: null,
+  progressGateway: null,
+  privacyNoticeUrl: null,
 });
 
 function configurationIsValid(config: AccountConfig): boolean {
@@ -86,10 +92,11 @@ export function createAccountRuntime(
     const client = dependencies.createClient(normalizedConfig);
     return {
       configured: true,
-      dataService: new AccountDataService(createSupabaseAccountDataGateway(client)),
-      privacyNoticeUrl: config.privacyNoticeUrl?.trim() ?? null,
-      progressGateway: dependencies.createProgressGateway?.(client) ?? null,
       service: new AccountAuthService(createSupabaseAccountAuthGateway(client)),
+      dataService: new AccountDataService(createSupabaseAccountDataGateway(client)),
+      leaderboardService: new LeaderboardService(createSupabaseLeaderboardGateway(client)),
+      progressGateway: dependencies.createProgressGateway?.(client) ?? null,
+      privacyNoticeUrl: config.privacyNoticeUrl?.trim() ?? null,
     };
   } catch {
     return UNAVAILABLE_RUNTIME;

@@ -33,6 +33,7 @@ function validatePublicConfig(overrides = {}) {
       EXPO_PUBLIC_SUPABASE_URL: 'https://example-project.supabase.co',
       EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: `sb_publishable_${'a'.repeat(32)}`,
       EXPO_PUBLIC_ACCOUNT_PRIVACY_URL: 'https://example.com/subnet/privacy',
+      EXPO_PUBLIC_SUPPORT_EMAIL: 'support@example.com',
       ...overrides,
     },
   });
@@ -57,6 +58,9 @@ describe('production GitHub Pages deployment', () => {
     expect(workflow).toContain(
       'EXPO_PUBLIC_ACCOUNT_PRIVACY_URL: ${{ vars.EXPO_PUBLIC_ACCOUNT_PRIVACY_URL }}',
     );
+    expect(workflow).toContain(
+      'EXPO_PUBLIC_SUPPORT_EMAIL: zach+subnetsupport@itcareerquestions.com',
+    );
     expect(workflow).toContain('node scripts/validate-public-account-config.mjs');
     expect(workflow).not.toContain('SERVICE_ROLE');
     expect(workflow).not.toContain('SECRET_KEY');
@@ -78,12 +82,18 @@ describe('production GitHub Pages deployment', () => {
       { EXPO_PUBLIC_ACCOUNT_PRIVACY_URL: 'https://10.0.0.1/privacy' },
       { EXPO_PUBLIC_ACCOUNT_PRIVACY_URL: 'https://169.254.10.20/privacy' },
       { EXPO_PUBLIC_ACCOUNT_PRIVACY_URL: 'https://foo.local/privacy' },
+      { EXPO_PUBLIC_SUPPORT_EMAIL: '' },
+      { EXPO_PUBLIC_SUPPORT_EMAIL: 'not-an-email' },
+      { EXPO_PUBLIC_SUPPORT_EMAIL: 'private@localhost' },
     ];
 
     for (const invalid of invalidConfigurations) {
       const result = validatePublicConfig(invalid);
       expect(result.status).not.toBe(0);
-      expect(`${result.stdout}${result.stderr}`).not.toContain(Object.values(invalid)[0]);
+      const invalidValue = Object.values(invalid)[0];
+      if (invalidValue !== '') {
+        expect(`${result.stdout}${result.stderr}`).not.toContain(invalidValue);
+      }
     }
   });
 

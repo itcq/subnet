@@ -42,6 +42,11 @@ const mockAccountRuntime = {
     deleteOwnAccount(userId: string): Promise<void>;
     exportAccountData(userId: string): Promise<unknown>;
   },
+  leaderboardService: null as null | {
+    getProfile(userId: string): Promise<unknown>;
+    listEntries(catalogVersion: string): Promise<readonly unknown[]>;
+    updateProfile(userId: string, publicName: string, optedIn: boolean): Promise<unknown>;
+  },
   privacyNoticeUrl: null as string | null,
   progressGateway: null as typeof mockProgressGateway | null,
   service: null as null | {
@@ -201,7 +206,7 @@ describe('HomeScreen launch and menu flow', () => {
   it('shows a branded-neutral accessible launch state and hides menu and challenge during hydration', async () => {
     const screen = await render(<HomeScreen />);
 
-    expect(screen.getByText('Subnet Game')).toBeTruthy();
+    expect(screen.getAllByText('Subnet Game').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(TAGLINE)).toBeTruthy();
     expect(screen.getByRole('progressbar', { name: 'Preparing your journey' })).toBeTruthy();
     expect(screen.getByText('Loading saved progress…')).toBeTruthy();
@@ -220,7 +225,7 @@ describe('HomeScreen launch and menu flow', () => {
     };
     const screen = await render(<HomeScreen />);
 
-    expect(screen.getByText('Subnet Game')).toBeTruthy();
+    expect(screen.getAllByText('Subnet Game').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText(TAGLINE)).toBeTruthy();
     expect(screen.getByText('We could not load your saved progress.')).toBeTruthy();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
@@ -234,7 +239,7 @@ describe('HomeScreen launch and menu flow', () => {
     const screen = await render(<HomeScreen />);
 
     expect(screen.getByTestId('main-menu-scroll')).toBeTruthy();
-    expect(screen.getByText('Subnet Game')).toBeTruthy();
+    expect(screen.getAllByText('Subnet Game').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('YOUR SUBNET JOURNEY')).toBeTruthy();
     expect(screen.getByText('Foundations')).toBeTruthy();
     expect(screen.getByText('Unit 1 · Lesson 1')).toBeTruthy();
@@ -555,6 +560,21 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByRole('header', { name: 'Local Rank & Badges' })).toBeTruthy();
     expect(screen.getByText('700 local points')).toBeTruthy();
     expect(screen.getByText('Persistent Solver')).toBeTruthy();
+  });
+
+  it('opens the global scoreboard and uses the hamburger menu to reach information pages', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'GLOBAL SCOREBOARD' }));
+    expect(screen.getByRole('header', { name: 'Global Scoreboard' })).toBeTruthy();
+    expect(screen.getByText(/Email addresses are never shown/i)).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Open navigation menu' }));
+    await fireEvent.press(screen.getByRole('menuitem', { name: 'Site Map' }));
+
+    expect(screen.getByRole('header', { name: 'Site Map' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Open navigation menu' })).toBeTruthy();
   });
 
   it('opens the challenge from the menu and returns to the menu', async () => {

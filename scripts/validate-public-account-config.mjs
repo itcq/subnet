@@ -67,6 +67,21 @@ function validatePublicAccountConfig(environment) {
   if (!isPublicDomainHostname(privacyUrl.hostname)) {
     throw new Error('EXPO_PUBLIC_ACCOUNT_PRIVACY_URL must use a public HTTPS hostname.');
   }
+
+  const supportEmail = environment.EXPO_PUBLIC_SUPPORT_EMAIL;
+  const emailParts = typeof supportEmail === 'string' ? supportEmail.split('@') : [];
+  const localPart = emailParts[0] ?? '';
+  const domain = emailParts[1] ?? '';
+  if (
+    emailParts.length !== 2
+    || localPart.length === 0
+    || localPart.length > 64
+    || supportEmail.length > 254
+    || !/^[A-Z0-9.!#$%&'*+/=?^_`{|}~-]+$/i.test(localPart)
+    || !isPublicDomainHostname(domain)
+  ) {
+    throw new Error('EXPO_PUBLIC_SUPPORT_EMAIL must be a public support mailbox.');
+  }
 }
 
 try {

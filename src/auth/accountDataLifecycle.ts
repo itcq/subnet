@@ -1,10 +1,14 @@
 export type AccountDataExport = Readonly<{
-  schema_version: 1;
+  schema_version: 2;
   exported_at: string;
   account: Readonly<{
     user_id: string;
     email: string;
     created_at: string;
+  }>;
+  scoreboard: Readonly<{
+    public_name: string | null;
+    leaderboard_opt_in: boolean;
   }>;
   synced_progress: readonly Readonly<{
     catalog_version: string;
@@ -32,13 +36,31 @@ function isExport(value: unknown, expectedUserId: string): value is AccountDataE
   if (typeof value !== 'object' || value === null) return false;
   const candidate = value as Record<string, unknown>;
   const account = candidate.account;
+  const scoreboard = candidate.scoreboard;
   const progress = candidate.synced_progress;
   if (
-    candidate.schema_version !== 1
+    candidate.schema_version !== 2
     || !isIsoTimestamp(candidate.exported_at)
     || typeof account !== 'object'
     || account === null
+    || typeof scoreboard !== 'object'
+    || scoreboard === null
     || !Array.isArray(progress)
+  ) return false;
+
+  const scoreboardRecord = scoreboard as Record<string, unknown>;
+  const publicName = scoreboardRecord.public_name;
+  const optedIn = scoreboardRecord.leaderboard_opt_in;
+  const validPublicName = typeof publicName === 'string'
+    && publicName.length >= 3
+    && publicName.length <= 24
+    && publicName === publicName.trim()
+    && /^[\p{L}\p{N} ._-]+$/u.test(publicName)
+    && !publicName.includes('@');
+  if (
+    typeof optedIn !== 'boolean'
+    || (optedIn && !validPublicName)
+    || (!optedIn && publicName !== null)
   ) return false;
 
   const accountRecord = account as Record<string, unknown>;

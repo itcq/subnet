@@ -9,7 +9,7 @@ describe('createAccountRuntime', () => {
 
     expect(
       createAccountRuntime({ url: '', publishableKey: '', privacyNoticeUrl: '' }, { createClient }),
-    ).toEqual({ configured: false, dataService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
+    ).toEqual({ configured: false, dataService: null, leaderboardService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
     expect(createClient).not.toHaveBeenCalled();
   });
 
@@ -28,6 +28,7 @@ describe('createAccountRuntime', () => {
     expect(createAccountRuntime(config, { createClient })).toEqual({
       configured: false,
       dataService: null,
+      leaderboardService: null,
       privacyNoticeUrl: null,
       progressGateway: null,
       service: null,
@@ -45,7 +46,7 @@ describe('createAccountRuntime', () => {
         { url: 'https://example.supabase.co', publishableKey: 'key', privacyNoticeUrl: 'https://example.test/privacy' },
         { createClient },
       ),
-    ).toEqual({ configured: false, dataService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
+    ).toEqual({ configured: false, dataService: null, leaderboardService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
   });
 
   it('keeps public accounts unavailable on unreviewed native platforms', () => {
@@ -58,6 +59,7 @@ describe('createAccountRuntime', () => {
       expect(createPublicAccountRuntime('ios')).toEqual({
         configured: false,
         dataService: null,
+        leaderboardService: null,
         privacyNoticeUrl: null,
         progressGateway: null,
         service: null,
@@ -115,6 +117,7 @@ describe('createAccountRuntime', () => {
     expect(runtime.configured).toBe(true);
     expect(runtime.privacyNoticeUrl).toBe('https://example.test/privacy');
     expect(runtime.service).not.toBeNull();
+    expect(runtime.leaderboardService).not.toBeNull();
     expect(runtime.progressGateway).toBe(progressGateway);
     expect(createClient).toHaveBeenCalledTimes(1);
     expect(createProgressGateway).toHaveBeenCalledWith(client);

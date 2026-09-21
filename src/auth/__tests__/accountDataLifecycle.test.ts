@@ -6,12 +6,16 @@ import {
 
 describe('AccountDataService', () => {
   const validExport: AccountDataExport = {
-    schema_version: 1,
+    schema_version: 2,
     exported_at: '2026-08-12T16:00:00.000Z',
     account: {
       user_id: 'user-123',
       email: 'learner@example.com',
       created_at: '2026-08-12T15:00:00.000Z',
+    },
+    scoreboard: {
+      public_name: 'Packet Pal',
+      leaderboard_opt_in: true,
     },
     synced_progress: [
       {
@@ -36,6 +40,21 @@ describe('AccountDataService', () => {
   it('rejects malformed or cross-user export documents', async () => {
     const rpc = jest.fn().mockResolvedValue({
       data: { ...validExport, account: { ...validExport.account, user_id: 'user-other' } },
+      error: null,
+    });
+    const service = new AccountDataService(createSupabaseAccountDataGateway({ rpc }));
+
+    await expect(service.exportAccountData('user-123')).rejects.toThrow(
+      'Account export could not be completed. Please try again.',
+    );
+  });
+
+  it('rejects malformed scoreboard settings in account exports', async () => {
+    const rpc = jest.fn().mockResolvedValue({
+      data: {
+        ...validExport,
+        scoreboard: { public_name: 'learner@example.com', leaderboard_opt_in: true },
+      },
       error: null,
     });
     const service = new AccountDataService(createSupabaseAccountDataGateway({ rpc }));

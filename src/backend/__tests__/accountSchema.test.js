@@ -6,6 +6,10 @@ const migrationPath = path.resolve(
   process.cwd(),
   'supabase/migrations/00000000000001_account_progress.sql',
 );
+const leaderboardMigrationPath = path.resolve(
+  process.cwd(),
+  'supabase/migrations/00000000000002_global_scoreboard.sql',
+);
 const pgTapPath = path.resolve(
   process.cwd(),
   'supabase/tests/database/account_progress_rls.test.sql',
@@ -14,6 +18,11 @@ const pgTapPath = path.resolve(
 function migration() {
   expect(fs.existsSync(migrationPath)).toBe(true);
   return fs.readFileSync(migrationPath, 'utf8').toLowerCase();
+}
+
+function leaderboardMigration() {
+  expect(fs.existsSync(leaderboardMigrationPath)).toBe(true);
+  return fs.readFileSync(leaderboardMigrationPath, 'utf8').toLowerCase();
 }
 
 function pgTapTest() {
@@ -97,7 +106,9 @@ describe('account progress database contract', () => {
   it('keeps the executable pgTAP plan aligned with the declared plan', () => {
     const sql = pgTapTest();
 
-    expect(sql).toContain('select plan(25)');
+    expect(sql).toContain('select plan(37)');
+    expect(sql).toContain('scoreboard participation defaults to disabled');
+    expect(sql).toContain('anonymous viewers see only opted-in public names and verified completion totals');
     expect(sql).toContain('clients cannot bypass atomic synchronization with direct progress reads');
     expect(sql).toContain('clients cannot bypass atomic synchronization with direct progress inserts');
     expect(sql).toContain('a user cannot set the ownership column to their own id');
@@ -115,5 +126,51 @@ describe('account progress database contract', () => {
     expect(sql).toContain('after insert on auth.users');
     expect(sql).toContain('execute function public.handle_new_user()');
     expect(sql.match(/on delete cascade/g)?.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+describe('privacy-safe global scoreboard database contract', () => {
+  it('requires an explicit opt-in and a constrained unique public name', () => {
+    const sql = leaderboardMigration();
+
+    expect(sql).toContain('leaderboard_opt_in boolean not null default false');
+    expect(sql).toContain('check (not leaderboard_opt_in or public_name is not null)');
+    expect(sql).toContain('create unique index profiles_public_name_unique');
+    expect(sql).toContain('on public.profiles (lower(public_name))');
+    expect(sql).toContain('char_length(public_name) between 3 and 24');
+  });
+
+  it('publishes only opted-in names, rank positions, and Journey completion counts', () => {
+    const sql = leaderboardMigration();
+    const functionStart = sql.indexOf('create or replace function public.list_global_scoreboard');
+    const signature = sql.slice(functionStart, sql.indexOf('language plpgsql', functionStart));
+
+    expect(signature).toContain('rank_position bigint');
+    expect(signature).toContain('public_name text');
+    expect(signature).toContain('completed_count bigint');
+    expect(signature).not.toContain('email');
+    expect(signature).not.toContain('completed_at');
+    expect(sql).toContain('where profiles.leaderboard_opt_in');
+    expect(sql).toContain('grant execute on function public.list_global_scoreboard(text) to anon');
+    expect(sql).toContain('grant execute on function public.list_global_scoreboard(text) to authenticated');
+  });
+
+  it('keeps profile updates authenticated and bound to the expected user', () => {
+    const sql = leaderboardMigration();
+
+    expect(sql).toContain('function public.get_my_leaderboard_profile(');
+    expect(sql).toContain('function public.update_leaderboard_profile(');
+    expect(sql.match(/auth\.uid\(\) is distinct from expected_user_id/g)?.length).toBeGreaterThanOrEqual(2);
+    expect(sql).toContain('grant execute on function public.update_leaderboard_profile(uuid, text, boolean) to authenticated');
+    expect(sql).not.toContain('grant execute on function public.update_leaderboard_profile(uuid, text, boolean) to anon');
+  });
+
+  it('includes scoreboard privacy settings in the account export schema', () => {
+    const sql = leaderboardMigration();
+
+    expect(sql).toContain("'schema_version', 2");
+    expect(sql).toContain("'scoreboard', jsonb_build_object(");
+    expect(sql).toContain("'public_name', profile_public_name");
+    expect(sql).toContain("'leaderboard_opt_in', profile_leaderboard_opt_in");
   });
 });
