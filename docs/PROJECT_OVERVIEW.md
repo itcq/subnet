@@ -8,7 +8,7 @@ Subnet Game is an independent, mobile-browser-first IPv4 subnetting learning app
 
 ## Product goal
 
-Help aspiring network administrators and engineers build accurate subnet-boundary reasoning through guided practice that explains mistakes instead of punishing them.
+Help learners reinforce IPv4 subnetting during the part of their Cisco CCNA or CompTIA Network+ studies where the skill needs focused repetition. Sessions should fit into a few spare minutes, explain mistakes instead of punishing them, and build vendor-neutral subnet-boundary reasoning that can transfer to Juniper and cloud networking study.
 
 ## Initial delivery target
 

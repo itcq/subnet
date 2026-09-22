@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createPublicAccountRuntime } from '@/auth/accountRuntime';
 import type { AccountIdentity } from '@/auth/accountAuth';
+import { PRODUCT_COPY } from '@/content/productCopy';
 import type { LocalTimedResult } from '@/domain/achievements/achievements';
 import { CATALOG_VERSION, subnetQuestionCatalog } from '@/domain/questions/catalog';
 import { getJourneyPosition, JOURNEY_STAGES, type JourneyPosition } from '@/domain/questions/journey';
@@ -33,7 +34,6 @@ import { useLocalProgress } from '@/progress/useLocalProgress';
 
 const progressRuntime = createProgressRepository();
 const accountRuntime = createPublicAccountRuntime();
-const TAGLINE = 'Learn subnetting one short lesson at a time.';
 
 function resolveJourneyQuestionId(ordinal: number): string {
   const question = subnetQuestionCatalog[ordinal - 1];
@@ -62,7 +62,7 @@ function LaunchIdentity() {
       <Text accessibilityRole="header" style={styles.title}>
         Subnet Game
       </Text>
-      <Text style={styles.tagline}>{TAGLINE}</Text>
+      <Text style={styles.tagline}>{PRODUCT_COPY.tagline}</Text>
     </View>
   );
 }
@@ -561,6 +561,8 @@ export default function HomeScreen() {
             </Text>
             {isHowToPlay ? (
               <View style={styles.infoCard}>
+                <Text style={styles.infoText}>{PRODUCT_COPY.howToPurpose}</Text>
+                <Text style={styles.infoText}>{PRODUCT_COPY.skillTransfer}</Text>
                 <Text style={styles.infoText}>1. Read the network and prefix-length prompt.</Text>
                 <Text style={styles.infoText}>
                   2. Enter your answer as four decimal octets (for example, 192.168.1.0).
@@ -574,6 +576,7 @@ export default function HomeScreen() {
                 <Text style={styles.infoText}>
                   Only completed challenges are saved; unfinished answers are discarded when you leave.
                 </Text>
+                <Text style={styles.infoText}>{PRODUCT_COPY.independence}</Text>
               </View>
             ) : (
               <>
@@ -603,9 +606,7 @@ export default function HomeScreen() {
         <PersistenceNotice />
         <View style={styles.menuContainer}>
           <LaunchIdentity />
-          <Text style={styles.description}>
-            Build real subnetting skill through short lessons and stage checkpoints.
-          </Text>
+          <Text style={styles.description}>{PRODUCT_COPY.homePurpose}</Text>
           <View style={styles.progressCard}>
             <Text style={styles.progressLabel}>YOUR SUBNET JOURNEY</Text>
             {nextPosition === undefined ? (
@@ -644,7 +645,7 @@ export default function HomeScreen() {
           </View>
           <StagePath nextOrdinal={nextQuestion?.ordinal} />
           <Text style={styles.trustText}>
-            Learn at your pace. The Journey stays untimed, with no lives or streak penalties.
+            {PRODUCT_COPY.studyWindow}
           </Text>
         </View>
       </ScrollView>

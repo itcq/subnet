@@ -4,7 +4,7 @@
 
 ## Executive status
 
-Subnet Game is a public-production static web application with a deterministic IPv4 subnetting Journey, beginner Learn path, Guided Practice transfer set, optional Timed Mode, and responsive mobile-browser input. The product is web-first: mobile browser functionality is the primary target and desktop browsers provide the complete experience.
+Subnet Game is a public-production static web application for short IPv4 subnetting practice during Cisco CCNA and CompTIA Network+ study. It includes a deterministic Journey, beginner Learn path, Guided Practice transfer set, optional Timed Mode, and responsive mobile-browser input. The product is web-first: mobile browser functionality is the primary target and desktop browsers provide the complete experience.
 
 ## Current revision
 

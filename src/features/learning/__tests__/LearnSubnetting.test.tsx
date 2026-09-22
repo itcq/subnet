@@ -12,6 +12,11 @@ describe('LearnSubnetting', () => {
     const view = await render(<LearnSubnetting onBack={jest.fn()} onStartPractice={jest.fn()} />);
 
     expect(view.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
+    expect(
+      view.getByText(
+        'Use this optional, unscored refresher when your CCNA or Network+ studies reach subnetting. Learn at your pace, leave whenever you like, and return without losing anything.',
+      ),
+    ).toBeTruthy();
     expect(view.getByText('Why subnetting exists')).toBeTruthy();
     expect(
       view.getByText(

@@ -13,12 +13,18 @@ function readProjectFile(path) {
 }
 
 describe('public release metadata', () => {
-  it('publishes a production title and useful search description', () => {
+  it('publishes a CCNA-and-Network+-first title and useful search description', () => {
     const layout = readProjectFile('src/app/_layout.tsx');
+    const productCopy = readProjectFile('src/content/productCopy.ts');
 
-    expect(layout).toContain('<title>Subnet Game</title>');
-    expect(layout).toContain('Practice IPv4 subnetting');
-    expect(layout).not.toMatch(/Subnet Game Alpha/i);
+    expect(layout).toContain('<title>Subnet Game | CCNA &amp; Network+ Practice</title>');
+    expect(layout).toContain('content={PRODUCT_COPY.siteDescription}');
+    expect(productCopy).toContain(
+      'Short IPv4 subnetting practice for Cisco CCNA and CompTIA Network+ learners',
+    );
+    expect(productCopy.indexOf('CCNA')).toBeLessThan(productCopy.indexOf('Juniper'));
+    expect(productCopy.indexOf('Network+')).toBeLessThan(productCopy.indexOf('Juniper'));
+    expect(`${layout}\n${productCopy}`).not.toMatch(/Subnet Game Alpha/i);
   });
 
   it('allows public indexing instead of retaining limited-discovery controls', () => {
