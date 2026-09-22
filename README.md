@@ -1,8 +1,9 @@
 # Subnet Game
 
-A mobile-browser-first IPv4 subnetting learning game that also provides a complete desktop-browser experience.
+A mobile-browser-first IPv4 subnetting game for short practice sessions during Cisco CCNA and CompTIA Network+ study. It also provides a complete desktop-browser experience.
 
 This is an independent standalone project with no NetworkChuck, NetworkChuck Academy, LMS, or student-directory affiliation.
+It is not affiliated with or endorsed by Cisco or CompTIA, and it does not promise certification or exam results.
 
 ## Product direction
 

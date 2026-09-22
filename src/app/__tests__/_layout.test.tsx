@@ -17,13 +17,28 @@ jest.mock('expo-router/head', () => {
   return {
     __esModule: true,
     default: ({ children }: React.PropsWithChildren) => {
-      const title = ReactModule.Children.toArray(children)[0] as React.ReactElement<{
+      const elements = ReactModule.Children.toArray(children) as React.ReactElement<{
         children?: React.ReactNode;
-      }>;
+        content?: string;
+        name?: string;
+      }>[];
+      const title = elements.find((element) => element.type === 'title');
+      const description = elements.find(
+        (element) => element.type === 'meta' && element.props.name === 'description',
+      );
       return ReactModule.createElement(
-        ReactNative.Text,
-        { testID: 'document-title' },
-        title.props.children,
+        ReactNative.View,
+        null,
+        ReactModule.createElement(
+          ReactNative.Text,
+          { testID: 'document-title' },
+          title?.props.children,
+        ),
+        ReactModule.createElement(
+          ReactNative.Text,
+          { testID: 'document-description' },
+          description?.props.content,
+        ),
       );
     },
   };
@@ -35,9 +50,14 @@ jest.mock('react-native-safe-area-context', () => ({
 }));
 
 describe('RootLayout', () => {
-  it('sets a descriptive static and hydrated document title', async () => {
+  it('positions the site for CCNA and Network+ learners in search and social metadata', async () => {
     const view = await render(<RootLayout />);
 
-    expect(view.getByTestId('document-title')).toHaveTextContent('Subnet Game');
+    expect(view.getByTestId('document-title')).toHaveTextContent(
+      'Subnet Game | CCNA & Network+ Practice',
+    );
+    expect(view.getByTestId('document-description')).toHaveTextContent(
+      'Short IPv4 subnetting practice for Cisco CCNA and CompTIA Network+ learners, with guided lessons, typed-answer challenges, and optional timed drills.',
+    );
   });
 });

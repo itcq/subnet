@@ -27,8 +27,14 @@ const htmlFiles = files.filter(isHtmlDocument);
 
 requireCondition(existsSync(join(artifactRoot, '.nojekyll')), 'dist/.nojekyll is missing');
 requireCondition(titleMatches.length === 1, `expected one title, found ${titleMatches.length}`);
-requireCondition(titleMatches[0] === 'Subnet Game', `unexpected title: ${titleMatches[0]}`);
-requireCondition(html.includes('Practice IPv4 subnetting'), 'search description is missing');
+requireCondition(
+  titleMatches[0] === 'Subnet Game | CCNA &amp; Network+ Practice',
+  `unexpected title: ${titleMatches[0]}`,
+);
+requireCondition(
+  html.includes('Short IPv4 subnetting practice for Cisco CCNA and CompTIA Network+ learners'),
+  'CCNA and Network+ search description is missing',
+);
 requireCondition(html.includes('https://itcq.github.io/subnet/'), 'canonical production URL is missing');
 requireCondition(!/noindex|nofollow|noarchive/i.test(html), 'crawler-blocking metadata is present');
 requireCondition(!/Subnet Game Alpha/i.test(html), 'alpha title is present');

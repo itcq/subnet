@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { PRODUCT_COPY } from '@/content/productCopy';
 import { EXTERNAL_RESOURCE_DISCLAIMER, LEARNING_CATALOG } from '@/domain/learning/content';
 import { GuidedOctetLesson } from '@/features/learning/GuidedOctetLesson';
 
@@ -57,7 +58,7 @@ export function LearnSubnetting({
           Learn Subnetting
         </Text>
         <Text style={styles.optionalNotice}>
-          Optional and unscored. Learn at your pace, leave whenever you like, and return without losing anything.
+          {PRODUCT_COPY.learnContext}
         </Text>
 
         <View style={styles.heroCard}>

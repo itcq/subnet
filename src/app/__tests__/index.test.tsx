@@ -134,7 +134,9 @@ const HomeScreen = require('../index').default as typeof import('../index').defa
 
 const WEB_NOTICE =
   'Anonymous Journey progress stays in this browser. Signed-in progress syncs to your account automatically.';
-const TAGLINE = 'Learn subnetting one short lesson at a time.';
+const TAGLINE = 'Short subnetting practice for CCNA and Network+.';
+const HOME_PURPOSE =
+  'Use a few focused minutes to practice IPv4 network addresses, masks, CIDR prefixes, and address ranges while those skills are active in your studies.';
 
 jest.spyOn(BackHandler, 'addEventListener').mockImplementation((_eventName, handler) => {
   mockHardwareBackPress = () => handler(undefined as never);
@@ -235,6 +237,13 @@ describe('HomeScreen launch and menu flow', () => {
 
     expect(screen.getByTestId('main-menu-scroll')).toBeTruthy();
     expect(screen.getByText('Subnet Game')).toBeTruthy();
+    expect(screen.getByText(TAGLINE)).toBeTruthy();
+    expect(screen.getByText(HOME_PURPOSE)).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Study in short sessions, then return to your course. The Journey is untimed, with no lives or streak penalties.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByText('YOUR SUBNET JOURNEY')).toBeTruthy();
     expect(screen.getByText('Foundations')).toBeTruthy();
     expect(screen.getByText('Unit 1 · Lesson 1')).toBeTruthy();
@@ -501,7 +510,7 @@ describe('HomeScreen launch and menu flow', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
 
     expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
-    expect(screen.getByText(/Optional and unscored/)).toBeTruthy();
+    expect(screen.getByText(/optional, unscored refresher/i)).toBeTruthy();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Start guided practice' }));
@@ -658,6 +667,21 @@ describe('HomeScreen launch and menu flow', () => {
     await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
     expect(screen.getByTestId('info-scroll')).toBeTruthy();
     expect(screen.getByRole('header', { name: 'How to Play' })).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Use Subnet Game alongside your CCNA or Network+ studies when you need a few focused minutes of subnetting practice.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        'CCNA and Network+ are the primary focus. The same IPv4 and CIDR skills also support Juniper and cloud networking study.',
+      ),
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        'Subnet Game is an independent study tool. It is not affiliated with or endorsed by Cisco or CompTIA, and it does not promise certification or exam results.',
+      ),
+    ).toBeTruthy();
     expect(screen.getByText('1. Read the network and prefix-length prompt.')).toBeTruthy();
     expect(
       screen.getByText('2. Enter your answer as four decimal octets (for example, 192.168.1.0).'),
