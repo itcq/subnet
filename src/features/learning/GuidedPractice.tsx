@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
   View,
 } from 'react-native';
 
@@ -33,6 +35,7 @@ function sanitizeOctet(value: string): string {
 
 export function GuidedPractice({ onBack, scrollToTop }: GuidedPracticeProps) {
   const scrollRef = useRef<ScrollView>(null);
+  const octetInputRefs = useRef<(TextInput | null)[]>([]);
   const [scenarioIndex, setScenarioIndex] = useState(0);
   const [answerOctets, setAnswerOctets] = useState(['', '', '', '']);
   const [feedback, setFeedback] = useState<PracticeFeedback | null>(null);
@@ -64,6 +67,18 @@ export function GuidedPractice({ onBack, scrollToTop }: GuidedPracticeProps) {
       currentIndex === index ? sanitizeOctet(value) : octet
     )));
     setFeedback(null);
+  }
+
+  function handleOctetKeyPress(
+    index: number,
+    event: NativeSyntheticEvent<TextInputKeyPressEventData>,
+  ) {
+    if (event.nativeEvent.key !== '.' || index >= answerOctets.length - 1) {
+      return;
+    }
+
+    event.preventDefault();
+    octetInputRefs.current[index + 1]?.focus();
   }
 
   function submit() {
@@ -166,8 +181,12 @@ export function GuidedPractice({ onBack, scrollToTop }: GuidedPracticeProps) {
                   keyboardType="number-pad"
                   maxLength={3}
                   onChangeText={(value) => updateOctet(index, value)}
+                  onKeyPress={(event) => handleOctetKeyPress(index, event)}
                   placeholder="000"
                   placeholderTextColor="#506579"
+                  ref={(input) => {
+                    octetInputRefs.current[index] = input;
+                  }}
                   style={styles.octetInput}
                   value={octet}
                 />

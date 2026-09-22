@@ -7,7 +7,9 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type NativeSyntheticEvent,
   type TextStyle,
+  type TextInputKeyPressEventData,
   View,
 } from 'react-native';
 
@@ -90,6 +92,7 @@ function NetworkChallengeSession({
   const [saveError, setSaveError] = useState<string | null>(null);
   const mountedRef = useRef(true);
   const completionInFlightRef = useRef(false);
+  const octetInputRefs = useRef<(TextInput | null)[]>([]);
 
   useLayoutEffect(() => {
     mountedRef.current = true;
@@ -134,6 +137,18 @@ function NetworkChallengeSession({
     }
     setSession((current) => updateAnswerOctet(current, index, value));
     setSaveError(null);
+  }
+
+  function handleOctetKeyPress(
+    index: number,
+    event: NativeSyntheticEvent<TextInputKeyPressEventData>,
+  ) {
+    if (event.nativeEvent.key !== '.' || index >= session.answerOctets.length - 1) {
+      return;
+    }
+
+    event.preventDefault();
+    octetInputRefs.current[index + 1]?.focus();
   }
 
   async function checkAnswer() {
@@ -247,8 +262,12 @@ function NetworkChallengeSession({
                 keyboardType="number-pad"
                 maxLength={3}
                 onChangeText={(value) => updateOctet(index, value)}
+                onKeyPress={(event) => handleOctetKeyPress(index, event)}
                 placeholder="000"
                 placeholderTextColor="#506579"
+                ref={(input) => {
+                  octetInputRefs.current[index] = input;
+                }}
                 style={styles.octetInput}
                 value={octet}
               />

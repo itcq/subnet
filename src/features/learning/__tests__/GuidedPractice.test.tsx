@@ -60,6 +60,25 @@ describe('GuidedPractice', () => {
     expect(inputStyle.caretColor).toBe('#F6C857');
   });
 
+  it('uses a period to advance to the next practice octet without replacing native Tab navigation', async () => {
+    const view = await render(<GuidedPractice onBack={jest.fn()} />);
+    const firstOctet = view.getByLabelText('Practice answer octet 1');
+    const preventPeriod = jest.fn();
+    const preventTab = jest.fn();
+
+    await fireEvent(firstOctet, 'keyPress', {
+      nativeEvent: { key: '.' },
+      preventDefault: preventPeriod,
+    });
+    await fireEvent(firstOctet, 'keyPress', {
+      nativeEvent: { key: 'Tab' },
+      preventDefault: preventTab,
+    });
+
+    expect(preventPeriod).toHaveBeenCalledTimes(1);
+    expect(preventTab).not.toHaveBeenCalled();
+  });
+
   it('strips non-digits and clamps each practice octet to 255', async () => {
     const view = await render(<GuidedPractice onBack={jest.fn()} />);
     const firstOctet = view.getByLabelText('Practice answer octet 1');

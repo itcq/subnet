@@ -65,6 +65,25 @@ describe('NetworkChallenge catalog session UI', () => {
     expect(style.caretColor).toBe('#F6C857');
   });
 
+  it('uses a period to advance to the next answer octet without replacing native Tab navigation', async () => {
+    const view = await render(<NetworkChallenge questions={easyQuestions} />);
+    const firstOctet = view.getByLabelText('Answer octet 1');
+    const preventPeriod = jest.fn();
+    const preventTab = jest.fn();
+
+    await fireEvent(firstOctet, 'keyPress', {
+      nativeEvent: { key: '.' },
+      preventDefault: preventPeriod,
+    });
+    await fireEvent(firstOctet, 'keyPress', {
+      nativeEvent: { key: 'Tab' },
+      preventDefault: preventTab,
+    });
+
+    expect(preventPeriod).toHaveBeenCalledTimes(1);
+    expect(preventTab).not.toHaveBeenCalled();
+  });
+
   it('starts the default catalog as a focused journey without exposing the global question total', async () => {
     const { getByText, queryByText } = await render(<NetworkChallenge />);
 
