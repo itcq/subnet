@@ -53,6 +53,25 @@ describe('TimedChallenge', () => {
     expect(style.caretColor).toBe('#101820');
   });
 
+  it('uses a period to advance to the next timed octet without replacing native Tab navigation', async () => {
+    const view = await render(<TimedChallenge question={question} />);
+    const firstOctet = view.getByLabelText('Timed answer octet 1');
+    const preventPeriod = jest.fn();
+    const preventTab = jest.fn();
+
+    await fireEvent(firstOctet, 'keyPress', {
+      nativeEvent: { key: '.' },
+      preventDefault: preventPeriod,
+    });
+    await fireEvent(firstOctet, 'keyPress', {
+      nativeEvent: { key: 'Tab' },
+      preventDefault: preventTab,
+    });
+
+    expect(preventPeriod).toHaveBeenCalledTimes(1);
+    expect(preventTab).not.toHaveBeenCalled();
+  });
+
   it('starts a separate typed-answer challenge with a two-minute timer and visible score', async () => {
     const view = await render(<TimedChallenge question={question} />);
 

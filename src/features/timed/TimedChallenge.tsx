@@ -8,6 +8,8 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  type NativeSyntheticEvent,
+  type TextInputKeyPressEventData,
   type TextStyle,
   View,
 } from 'react-native';
@@ -74,6 +76,7 @@ export function TimedChallenge({
   const [continuedUntimed, setContinuedUntimed] = useState(false);
   const [practiceComplete, setPracticeComplete] = useState(false);
   const [practiceHintIds, setPracticeHintIds] = useState<readonly ('mask' | 'block-size')[]>([]);
+  const octetInputRefs = useRef<(TextInput | null)[]>([]);
   const completionReportedRef = useRef(false);
   const foregroundClockRef = useRef<{
     accumulatedMilliseconds: number;
@@ -156,6 +159,18 @@ export function TimedChallenge({
     next[index] = normalizeOctet(value);
     setAnswerOctets(next);
     setFeedback(null);
+  }
+
+  function handleOctetKeyPress(
+    index: number,
+    event: NativeSyntheticEvent<TextInputKeyPressEventData>,
+  ) {
+    if (event.nativeEvent.key !== '.' || index >= answerOctets.length - 1) {
+      return;
+    }
+
+    event.preventDefault();
+    octetInputRefs.current[index + 1]?.focus();
   }
 
   function checkAnswer() {
@@ -285,6 +300,10 @@ export function TimedChallenge({
                 inputMode="numeric"
                 maxLength={3}
                 onChangeText={(value) => updateOctet(index, value)}
+                onKeyPress={(event) => handleOctetKeyPress(index, event)}
+                ref={(input) => {
+                  octetInputRefs.current[index] = input;
+                }}
                 style={styles.octetInput}
                 value={octet}
               />

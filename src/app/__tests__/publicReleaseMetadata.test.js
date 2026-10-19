@@ -110,9 +110,11 @@ describe('public release metadata', () => {
     );
   });
 
-  it('clears persistent bundler state for canonical production exports', () => {
+  it('clears persistent bundler state and serializes Metro work for canonical production exports', () => {
     const packageJson = JSON.parse(readProjectFile('package.json'));
 
-    expect(packageJson.scripts['export:web']).toContain('expo export --clear --platform web');
+    expect(packageJson.scripts['export:web']).toContain(
+      'expo export --clear --max-workers 1 --platform web',
+    );
   });
 });
