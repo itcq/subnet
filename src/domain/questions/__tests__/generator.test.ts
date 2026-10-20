@@ -23,7 +23,7 @@ describe('generateQuestion', () => {
     expect(question).toMatchObject({
       id: `${config.tier}-${String(config.start).padStart(3, '0')}`,
       ordinal: config.start,
-      catalogVersion: '17dd300a',
+      catalogVersion: 'e01606af',
       tier: config.tier,
       type: 'network-address',
       hints: {

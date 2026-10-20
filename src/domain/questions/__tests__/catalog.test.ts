@@ -51,6 +51,33 @@ describe('subnet question catalog', () => {
     }
   });
 
+  it('balances Class A-, B-, and C-style subnetting across the first 100 questions', () => {
+    const introductory = subnetQuestionCatalog.slice(0, 100);
+    const countInRange = (minimum: number, maximum: number) =>
+      introductory.filter(({ prefix }) => prefix >= minimum && prefix <= maximum).length;
+
+    expect({
+      classAStyle: countInRange(8, 15),
+      classBStyle: countInRange(16, 23),
+      classCStyle: countInRange(24, 30),
+    }).toEqual({
+      classAStyle: 33,
+      classBStyle: 33,
+      classCStyle: 34,
+    });
+  });
+
+  it('includes all three subnetting styles in every five-question introductory lesson', () => {
+    const introductory = subnetQuestionCatalog.slice(0, 100);
+
+    for (let start = 0; start < introductory.length; start += 5) {
+      const prefixes = introductory.slice(start, start + 5).map(({ prefix }) => prefix);
+      expect(prefixes.some((prefix) => prefix >= 8 && prefix <= 15)).toBe(true);
+      expect(prefixes.some((prefix) => prefix >= 16 && prefix <= 23)).toBe(true);
+      expect(prefixes.some((prefix) => prefix >= 24 && prefix <= 30)).toBe(true);
+    }
+  });
+
   it('guarantees hardest-tier /31 and /32 coverage', () => {
     const hardest = subnetQuestionCatalog.filter(({ tier }) => tier === 'hardest');
 
@@ -92,7 +119,7 @@ describe('subnet question catalog', () => {
       .join('\n');
     const digest = catalogFingerprint(signatures);
 
-    expect(digest).toBe('17dd300a');
+    expect(digest).toBe('e01606af');
     expect(CATALOG_VERSION).toBe(digest);
   });
 

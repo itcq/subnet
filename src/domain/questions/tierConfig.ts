@@ -4,12 +4,22 @@ function range(start: number, end: number): number[] {
   return Array.from({ length: end - start + 1 }, (_, index) => start + index);
 }
 
+const INTRODUCTORY_PREFIXES = Object.freeze([
+  24, 16, 8,
+  25, 17, 9,
+  26, 18, 10,
+  27, 19, 11,
+  28, 20, 12,
+  29, 21, 13,
+  30, 22, 14,
+]);
+
 const configs: TierConfig[] = [
   {
     tier: 'easy',
     start: 1,
     end: 100,
-    prefixes: range(24, 30),
+    prefixes: INTRODUCTORY_PREFIXES,
     showMaskBeforeAnswer: true,
     showBlockSizeBeforeAnswer: true,
   },

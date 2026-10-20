@@ -13,7 +13,7 @@ function question(ordinal: number, answer = `10.0.0.${ordinal}`): SubnetQuestion
   return {
     id: `question-${ordinal}`,
     ordinal,
-    catalogVersion: '17dd300a',
+    catalogVersion: 'e01606af',
     tier: 'easy',
     type: 'network-address',
     ip: `10.0.0.${ordinal}`,

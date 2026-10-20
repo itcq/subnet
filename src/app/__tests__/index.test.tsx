@@ -122,7 +122,8 @@ jest.mock('@/features/timed/TimedChallenge', () => {
   };
 });
 
-import { CATALOG_VERSION, subnetQuestionCatalog } from '@/domain/questions/catalog';
+import { subnetQuestionCatalog } from '@/domain/questions/catalog';
+import { JOURNEY_PROGRESS_VERSION } from '@/progress/version';
 import {
   clearAccountProgressRepository,
   createAccountProgressRepository,
@@ -207,7 +208,7 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByText('Loading saved progress…')).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'START JOURNEY' })).toBeNull();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
-    expect(useLocalProgress).toHaveBeenCalledWith(mockRepository, CATALOG_VERSION);
+    expect(useLocalProgress).toHaveBeenCalledWith(mockRepository, JOURNEY_PROGRESS_VERSION);
     expect(createProgressRepository).toHaveBeenCalledTimes(1);
   });
 
@@ -294,12 +295,12 @@ describe('HomeScreen launch and menu flow', () => {
     expect(createAccountProgressRepository).toHaveBeenCalledWith('user-123');
     expect(useLocalProgress).toHaveBeenLastCalledWith(
       mockAccountRepository,
-      CATALOG_VERSION,
+      JOURNEY_PROGRESS_VERSION,
     );
     await act(async () => undefined);
     expect(mockProgressGateway.syncCompleted).toHaveBeenCalledWith(
       'user-123',
-      CATALOG_VERSION,
+      JOURNEY_PROGRESS_VERSION,
       [],
     );
     expect(mockAdoptCompletedOrdinals).toHaveBeenCalledWith([]);
@@ -309,7 +310,7 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByRole('button', { name: 'ACCOUNT: learner@example.com' })).toBeTruthy();
 
     await act(async () => props.onIdentityChange(null));
-    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, JOURNEY_PROGRESS_VERSION);
   });
 
   it('reports confirmed backend deletion as successful even when local cleanup fails', async () => {
@@ -407,7 +408,7 @@ describe('HomeScreen launch and menu flow', () => {
     await act(async () => props.onIdentityChange(null));
     await act(async () => resolveRemote([]));
     expect(mockAdoptCompletedOrdinals).not.toHaveBeenCalled();
-    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, JOURNEY_PROGRESS_VERSION);
   });
 
   it('does not let a stale startup restore reactivate an account after sign out', async () => {
@@ -438,7 +439,7 @@ describe('HomeScreen launch and menu flow', () => {
     }));
 
     expect(createAccountProgressRepository).not.toHaveBeenCalledWith('stale-user');
-    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, JOURNEY_PROGRESS_VERSION);
   });
 
   it('returns to anonymous progress when authentication expires externally', async () => {
@@ -463,12 +464,12 @@ describe('HomeScreen launch and menu flow', () => {
     await act(async () => {});
     expect(useLocalProgress).toHaveBeenLastCalledWith(
       mockAccountRepository,
-      CATALOG_VERSION,
+      JOURNEY_PROGRESS_VERSION,
     );
 
     await act(async () => authStateListener?.(null));
 
-    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, CATALOG_VERSION);
+    expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, JOURNEY_PROGRESS_VERSION);
     await screen.unmount();
     expect(unsubscribe).toHaveBeenCalledTimes(1);
   });
@@ -746,7 +747,7 @@ describe('HomeScreen launch and menu flow', () => {
     jest.mocked(mockAccountRepository.listCompleted)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{
-        catalogVersion: CATALOG_VERSION,
+        catalogVersion: JOURNEY_PROGRESS_VERSION,
         questionId: subnetQuestionCatalog[0].id,
         ordinal: subnetQuestionCatalog[0].ordinal,
         completedAt,
@@ -775,9 +776,9 @@ describe('HomeScreen launch and menu flow', () => {
     expect(mockRecordCompletion).toHaveBeenCalledTimes(1);
     expect(mockProgressGateway.syncCompleted).toHaveBeenCalledWith(
       'user-123',
-      CATALOG_VERSION,
+      JOURNEY_PROGRESS_VERSION,
       [{
-        catalogVersion: CATALOG_VERSION,
+        catalogVersion: JOURNEY_PROGRESS_VERSION,
         ordinal: subnetQuestionCatalog[0].ordinal,
         completedAt,
       }],
@@ -810,7 +811,7 @@ describe('HomeScreen launch and menu flow', () => {
     jest.mocked(mockAccountRepository.listCompleted)
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([{
-        catalogVersion: CATALOG_VERSION,
+        catalogVersion: JOURNEY_PROGRESS_VERSION,
         questionId: subnetQuestionCatalog[0].id,
         ordinal: 1,
         completedAt: '2026-08-13T12:00:00.000Z',
@@ -836,7 +837,7 @@ describe('HomeScreen launch and menu flow', () => {
     const completion = challengeProps.onQuestionCompleted(subnetQuestionCatalog[0]);
 
     await act(async () => resolveNewerSync([{
-      catalogVersion: CATALOG_VERSION,
+      catalogVersion: JOURNEY_PROGRESS_VERSION,
       ordinal: 1,
       completedAt: '2026-08-13T12:00:00.000Z',
     }]));
@@ -870,7 +871,7 @@ describe('HomeScreen launch and menu flow', () => {
         }),
       );
       expect(mockRecordCompletion).toHaveBeenCalledWith({
-        catalogVersion: question.catalogVersion,
+        catalogVersion: JOURNEY_PROGRESS_VERSION,
         questionId: question.id,
         ordinal: question.ordinal,
         completedAt: '2026-07-24T12:34:56.789Z',

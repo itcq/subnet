@@ -45,7 +45,7 @@ export function validateCatalog(
     }
     signatures.add(signature);
 
-    if (question.catalogVersion !== '17dd300a') {
+    if (question.catalogVersion !== 'e01606af') {
       throw new Error(`Invalid catalog version for question ${question.id}`);
     }
     if (question.tier !== config.tier || !config.prefixes.includes(question.prefix)) {

@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { createPublicAccountRuntime } from '@/auth/accountRuntime';
 import type { AccountIdentity } from '@/auth/accountAuth';
 import type { LocalTimedResult } from '@/domain/achievements/achievements';
-import { CATALOG_VERSION, subnetQuestionCatalog } from '@/domain/questions/catalog';
+import { subnetQuestionCatalog } from '@/domain/questions/catalog';
 import { getJourneyPosition, JOURNEY_STAGES, type JourneyPosition } from '@/domain/questions/journey';
 import { AccountRegistration } from '@/features/account/AccountRegistration';
 import { downloadAccountDataExport } from '@/features/account/downloadAccountDataExport';
@@ -30,6 +30,7 @@ import {
   createProgressRepository,
 } from '@/progress/createProgressRepository';
 import { useLocalProgress } from '@/progress/useLocalProgress';
+import { JOURNEY_PROGRESS_VERSION } from '@/progress/version';
 
 const progressRuntime = createProgressRepository();
 const accountRuntime = createPublicAccountRuntime();
@@ -168,7 +169,7 @@ export default function HomeScreen() {
   const [activeProgressRepository, setActiveProgressRepository] = useState(
     progressRuntime.repository,
   );
-  const progress = useLocalProgress(activeProgressRepository, CATALOG_VERSION);
+  const progress = useLocalProgress(activeProgressRepository, JOURNEY_PROGRESS_VERSION);
   const accountIdentityVersion = useRef(0);
   const accountSyncVersion = useRef(0);
   const accountIdentityRef = useRef<AccountIdentity | null>(null);
@@ -201,7 +202,7 @@ export default function HomeScreen() {
     if (accountProgressSync === null) return;
     const syncIdentityVersion = accountIdentityVersion.current;
     const syncVersion = ++accountSyncVersion.current;
-    void accountProgressSync.syncCatalog(CATALOG_VERSION, true)
+    void accountProgressSync.syncCatalog(JOURNEY_PROGRESS_VERSION, true)
       .then((result) => {
         if (
           accountIdentityVersion.current !== syncIdentityVersion
@@ -354,7 +355,7 @@ export default function HomeScreen() {
             initialCompletedOrdinals={progress.completedOrdinals}
             onQuestionCompleted={async (question) => {
               await progress.recordCompletion({
-                catalogVersion: question.catalogVersion,
+                catalogVersion: JOURNEY_PROGRESS_VERSION,
                 questionId: question.id,
                 ordinal: question.ordinal,
                 completedAt: new Date().toISOString(),
@@ -365,7 +366,7 @@ export default function HomeScreen() {
                 const syncIdentityVersion = accountIdentityVersion.current;
                 const syncVersion = ++accountSyncVersion.current;
                 try {
-                  const result = await accountProgressSync.syncCatalog(CATALOG_VERSION, true);
+                  const result = await accountProgressSync.syncCatalog(JOURNEY_PROGRESS_VERSION, true);
                   if (
                     accountIdentityVersion.current === syncIdentityVersion
                     && accountSyncVersion.current === syncVersion
