@@ -6,12 +6,13 @@ import {
 
 describe('AccountDataService', () => {
   const validExport: AccountDataExport = {
-    schema_version: 1,
+    schema_version: 2,
     exported_at: '2026-08-12T16:00:00.000Z',
     account: {
       user_id: 'user-123',
       email: 'learner@example.com',
       created_at: '2026-08-12T15:00:00.000Z',
+      competition_alias: 'Subnetter-A1B2C3D4',
     },
     synced_progress: [
       {
@@ -19,6 +20,20 @@ describe('AccountDataService', () => {
         question_ordinal: 1,
         completed_at: '2026-08-12T15:30:00.000Z',
         created_at: '2026-08-12T15:31:00.000Z',
+      },
+    ],
+    ranked_timed_attempts: [
+      {
+        challenge_date: '2026-10-20',
+        target_ip: '192.168.10.44',
+        prefix: 24,
+        started_at: '2026-10-20T18:00:00.000Z',
+        expires_at: '2026-10-20T18:02:00.000Z',
+        status: 'correct',
+        failure_count: 1,
+        score: 850,
+        elapsed_seconds: 10,
+        completed_at: '2026-10-20T18:00:10.000Z',
       },
     ],
   };

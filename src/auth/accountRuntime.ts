@@ -12,6 +12,11 @@ import {
   type SupabaseAuthClient,
 } from './accountAuth';
 import { createSupabaseClient } from '../lib/supabase';
+import {
+  createSupabaseCompetitionGateway,
+  type RankedCompetitionGateway,
+  type SupabaseCompetitionClient,
+} from '../competition/supabaseCompetitionGateway';
 import type { RemoteProgressGateway } from '../progress/accountProgressSync';
 import {
   createSupabaseProgressGateway,
@@ -23,9 +28,10 @@ type AccountConfig = Readonly<{
   publishableKey: string;
   privacyNoticeUrl?: string;
 }>;
-type AccountClient = SupabaseAuthClient & SupabaseProgressClient & SupabaseAccountDataClient;
+type AccountClient = SupabaseAuthClient & SupabaseProgressClient & SupabaseAccountDataClient & SupabaseCompetitionClient;
 export type AccountRuntime = Readonly<{
   configured: boolean;
+  competitionGateway: RankedCompetitionGateway | null;
   dataService: AccountDataService | null;
   privacyNoticeUrl: string | null;
   progressGateway: RemoteProgressGateway | null;
@@ -33,6 +39,7 @@ export type AccountRuntime = Readonly<{
 }>;
 type Dependencies = Readonly<{
   createClient(config: AccountConfig): AccountClient;
+  createCompetitionGateway?: (client: AccountClient) => RankedCompetitionGateway;
   createProgressGateway?: (client: AccountClient) => RemoteProgressGateway;
 }>;
 
@@ -43,6 +50,9 @@ const defaultDependencies: Dependencies = {
       browserSessionStorage,
     ) as unknown as AccountClient;
   },
+  createCompetitionGateway(client) {
+    return createSupabaseCompetitionGateway(client);
+  },
   createProgressGateway(client) {
     return createSupabaseProgressGateway(client);
   },
@@ -50,6 +60,7 @@ const defaultDependencies: Dependencies = {
 
 const UNAVAILABLE_RUNTIME: AccountRuntime = Object.freeze({
   configured: false,
+  competitionGateway: null,
   dataService: null,
   privacyNoticeUrl: null,
   progressGateway: null,
@@ -86,6 +97,7 @@ export function createAccountRuntime(
     const client = dependencies.createClient(normalizedConfig);
     return {
       configured: true,
+      competitionGateway: dependencies.createCompetitionGateway?.(client) ?? null,
       dataService: new AccountDataService(createSupabaseAccountDataGateway(client)),
       privacyNoticeUrl: config.privacyNoticeUrl?.trim() ?? null,
       progressGateway: dependencies.createProgressGateway?.(client) ?? null,

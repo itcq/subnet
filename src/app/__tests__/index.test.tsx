@@ -24,6 +24,7 @@ const mockRecordCompletion = jest.fn<Promise<void>, [unknown]>();
 const mockNetworkChallenge = jest.fn((_props: unknown) => null);
 const mockGuidedPractice = jest.fn((_props: unknown) => null);
 const mockTimedChallenge = jest.fn((_props: unknown) => null);
+const mockRankedDailyChallenge = jest.fn((_props: unknown) => null);
 const mockAccountRegistration = jest.fn((_props: unknown) => null);
 
 const mockBackHandlerRemove = jest.fn();
@@ -36,8 +37,14 @@ const mockRuntime = {
 const mockProgressGateway = {
   syncCompleted: jest.fn().mockResolvedValue([]),
 };
+const mockCompetitionGateway = {
+  startAttempt: jest.fn(),
+  submitAnswer: jest.fn(),
+  getLeaderboard: jest.fn(),
+};
 const mockAccountRuntime = {
   configured: false,
+  competitionGateway: null as typeof mockCompetitionGateway | null,
   dataService: null as null | {
     deleteOwnAccount(userId: string): Promise<void>;
     exportAccountData(userId: string): Promise<unknown>;
@@ -122,6 +129,17 @@ jest.mock('@/features/timed/TimedChallenge', () => {
   };
 });
 
+jest.mock('@/features/competition/RankedDailyChallenge', () => {
+  const ReactModule = require('react');
+  const { View } = require('react-native');
+  return {
+    RankedDailyChallenge: (props: unknown) => {
+      mockRankedDailyChallenge(props);
+      return ReactModule.createElement(View, { testID: 'ranked-daily-challenge' });
+    },
+  };
+});
+
 import { subnetQuestionCatalog } from '@/domain/questions/catalog';
 import { JOURNEY_PROGRESS_VERSION } from '@/progress/version';
 import {
@@ -169,9 +187,11 @@ describe('HomeScreen launch and menu flow', () => {
     mockNetworkChallenge.mockClear();
     mockGuidedPractice.mockClear();
     mockTimedChallenge.mockClear();
+    mockRankedDailyChallenge.mockClear();
     mockAccountRegistration.mockClear();
     jest.mocked(clearAccountProgressRepository).mockReset();
     mockAccountRuntime.configured = false;
+    mockAccountRuntime.competitionGateway = null;
     mockAccountRuntime.dataService = null;
     mockAccountRuntime.privacyNoticeUrl = null;
     mockAccountRuntime.progressGateway = null;
@@ -556,6 +576,46 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByRole('header', { name: 'Local Rank & Badges' })).toBeTruthy();
     expect(screen.getByText('700 local points')).toBeTruthy();
     expect(screen.getByText('Persistent Solver')).toBeTruthy();
+  });
+
+  it('opens the signed-in daily ranked challenge with the active account identity', async () => {
+    hydrated();
+    mockAccountRuntime.configured = true;
+    mockAccountRuntime.competitionGateway = mockCompetitionGateway;
+    const screen = await render(<HomeScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    const accountProps = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
+      onBack(): void;
+      onIdentityChange(identity: { userId: string; email: string } | null): void;
+    }>;
+    await act(async () => accountProps.onIdentityChange({
+      userId: 'ranked-user',
+      email: 'ranked@example.com',
+    }));
+    await act(async () => accountProps.onBack());
+
+    await fireEvent.press(screen.getByRole('button', { name: 'PLAY TIMED MODE' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'OPEN DAILY RANKED CHALLENGE' }));
+
+    expect(screen.getByTestId('ranked-daily-challenge')).toBeTruthy();
+    expect(mockRankedDailyChallenge).toHaveBeenLastCalledWith(expect.objectContaining({
+      gateway: mockCompetitionGateway,
+      userId: 'ranked-user',
+    }));
+
+    await act(async () => accountProps.onIdentityChange({
+      userId: 'second-user',
+      email: 'second@example.com',
+    }));
+    expect(mockRankedDailyChallenge).toHaveBeenLastCalledWith(expect.objectContaining({
+      gateway: mockCompetitionGateway,
+      userId: 'second-user',
+    }));
+
+    await act(async () => accountProps.onIdentityChange(null));
+    expect(screen.queryByTestId('ranked-daily-challenge')).toBeNull();
+    expect(screen.getByText(/sign in and reconnect/i)).toBeTruthy();
   });
 
   it('opens the challenge from the menu and returns to the menu', async () => {

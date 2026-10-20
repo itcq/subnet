@@ -22,6 +22,28 @@ describe('TimedModeSetup', () => {
       view.getByText(/Both presets contribute to the same session-local totals/),
     ).toBeTruthy();
     expect(view.getByText(/selected preset is retained with each result for context/)).toBeTruthy();
+    expect(view.getByText(/server-verified daily ranking/i)).toBeTruthy();
+    expect(view.getByText(/signed-in account is required/i)).toBeTruthy();
+  });
+
+  it('opens the optional ranked challenge without starting local practice', async () => {
+    const onOpenRanked = jest.fn();
+    const onStartTimed = jest.fn();
+    const view = await render(
+      <TimedModeSetup
+        onBack={jest.fn()}
+        onOpenRanked={onOpenRanked}
+        onStartTimed={onStartTimed}
+        onStartUntimed={jest.fn()}
+        rankedStatus="available"
+      />,
+    );
+
+    await fireEvent.press(view.getByRole('button', { name: 'OPEN DAILY RANKED CHALLENGE' }));
+
+    expect(onOpenRanked).toHaveBeenCalledTimes(1);
+    expect(onStartTimed).not.toHaveBeenCalled();
+    expect(view.getByText(/one attempt per utc day/i)).toBeTruthy();
   });
 
   it('starts untimed, standard, extended, or back only after an explicit action', async () => {

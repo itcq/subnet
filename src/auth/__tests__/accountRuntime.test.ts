@@ -9,7 +9,7 @@ describe('createAccountRuntime', () => {
 
     expect(
       createAccountRuntime({ url: '', publishableKey: '', privacyNoticeUrl: '' }, { createClient }),
-    ).toEqual({ configured: false, dataService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
+    ).toEqual({ configured: false, competitionGateway: null, dataService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
     expect(createClient).not.toHaveBeenCalled();
   });
 
@@ -27,6 +27,7 @@ describe('createAccountRuntime', () => {
 
     expect(createAccountRuntime(config, { createClient })).toEqual({
       configured: false,
+      competitionGateway: null,
       dataService: null,
       privacyNoticeUrl: null,
       progressGateway: null,
@@ -45,7 +46,7 @@ describe('createAccountRuntime', () => {
         { url: 'https://example.supabase.co', publishableKey: 'key', privacyNoticeUrl: 'https://example.test/privacy' },
         { createClient },
       ),
-    ).toEqual({ configured: false, dataService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
+    ).toEqual({ configured: false, competitionGateway: null, dataService: null, privacyNoticeUrl: null, progressGateway: null, service: null });
   });
 
   it('keeps public accounts unavailable on unreviewed native platforms', () => {
@@ -57,6 +58,7 @@ describe('createAccountRuntime', () => {
     try {
       expect(createPublicAccountRuntime('ios')).toEqual({
         configured: false,
+        competitionGateway: null,
         dataService: null,
         privacyNoticeUrl: null,
         progressGateway: null,
@@ -102,6 +104,12 @@ describe('createAccountRuntime', () => {
       syncCompleted: jest.fn(),
     };
     const createProgressGateway = jest.fn(() => progressGateway);
+    const competitionGateway = {
+      startAttempt: jest.fn(),
+      submitAnswer: jest.fn(),
+      getLeaderboard: jest.fn(),
+    };
+    const createCompetitionGateway = jest.fn(() => competitionGateway);
 
     const runtime = createAccountRuntime(
       {
@@ -109,14 +117,16 @@ describe('createAccountRuntime', () => {
         publishableKey: 'publishable-key',
         privacyNoticeUrl: 'https://example.test/privacy',
       },
-      { createClient, createProgressGateway },
+      { createClient, createCompetitionGateway, createProgressGateway },
     );
 
     expect(runtime.configured).toBe(true);
     expect(runtime.privacyNoticeUrl).toBe('https://example.test/privacy');
     expect(runtime.service).not.toBeNull();
     expect(runtime.progressGateway).toBe(progressGateway);
+    expect(runtime.competitionGateway).toBe(competitionGateway);
     expect(createClient).toHaveBeenCalledTimes(1);
     expect(createProgressGateway).toHaveBeenCalledWith(client);
+    expect(createCompetitionGateway).toHaveBeenCalledWith(client);
   });
 });

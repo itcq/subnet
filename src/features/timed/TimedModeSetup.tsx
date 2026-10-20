@@ -2,11 +2,19 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export type TimedModeSetupProps = Readonly<{
   onBack: () => void;
+  onOpenRanked?: () => void;
   onStartTimed: (durationSeconds: 120 | 240) => void;
   onStartUntimed: () => void;
+  rankedStatus?: 'available' | 'sign-in' | 'unavailable';
 }>;
 
-export function TimedModeSetup({ onBack, onStartTimed, onStartUntimed }: TimedModeSetupProps) {
+export function TimedModeSetup({
+  onBack,
+  onOpenRanked = () => undefined,
+  onStartTimed,
+  onStartUntimed,
+  rankedStatus = 'sign-in',
+}: TimedModeSetupProps) {
   return (
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text accessibilityRole="header" style={styles.title}>
@@ -15,6 +23,23 @@ export function TimedModeSetup({ onBack, onStartTimed, onStartUntimed }: TimedMo
       <Text style={styles.intro}>
         Timed practice is always optional. The Journey stays untimed and uses the same typed-answer practice without local scoring pressure.
       </Text>
+
+      <View style={styles.rankedCard}>
+        <Text style={styles.rankedEyebrow}>OPTIONAL COMPETITION</Text>
+        <Text style={styles.rankedTitle}>Daily Ranked Challenge</Text>
+        <Text style={styles.rankedText}>
+          One attempt per UTC day with a server-verified daily ranking and an anonymous Subnetter alias.
+        </Text>
+        {rankedStatus === 'sign-in' ? (
+          <Text style={styles.rankedRequirement}>A signed-in account is required to compete.</Text>
+        ) : null}
+        {rankedStatus === 'unavailable' ? (
+          <Text style={styles.rankedRequirement}>Competition is temporarily unavailable.</Text>
+        ) : null}
+        {rankedStatus !== 'unavailable' ? (
+          <Action label="OPEN DAILY RANKED CHALLENGE" onPress={onOpenRanked} primary />
+        ) : null}
+      </View>
 
       <View style={styles.rulesCard}>
         <Text style={styles.cardTitle}>LOCAL PRACTICE SCORING</Text>
@@ -124,6 +149,36 @@ const styles = StyleSheet.create({
     color: '#334155',
     fontSize: 15,
     lineHeight: 22,
+  },
+  rankedCard: {
+    backgroundColor: '#EEF2FF',
+    borderColor: '#A5B4FC',
+    borderRadius: 18,
+    borderWidth: 1,
+    gap: 8,
+    padding: 18,
+  },
+  rankedEyebrow: {
+    color: '#4338CA',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  rankedTitle: {
+    color: '#1E1B4B',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  rankedText: {
+    color: '#3730A3',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  rankedRequirement: {
+    color: '#5B21B6',
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
   },
   noticeCard: {
     backgroundColor: '#fff7ed',

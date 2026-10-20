@@ -19,6 +19,7 @@ import { AccountRegistration } from '@/features/account/AccountRegistration';
 import { downloadAccountDataExport } from '@/features/account/downloadAccountDataExport';
 import { LocalAchievements } from '@/features/achievements/LocalAchievements';
 import { NetworkChallenge } from '@/features/challenge/NetworkChallenge';
+import { RankedDailyChallenge } from '@/features/competition/RankedDailyChallenge';
 import { GuidedPractice } from '@/features/learning/GuidedPractice';
 import { LearnSubnetting } from '@/features/learning/LearnSubnetting';
 import { TimedChallenge } from '@/features/timed/TimedChallenge';
@@ -51,6 +52,7 @@ type Screen =
   | 'learning-practice'
   | 'timed-setup'
   | 'timed'
+  | 'ranked'
   | 'achievements'
   | 'learn'
   | 'how-to-play'
@@ -401,13 +403,55 @@ export default function HomeScreen() {
         <View style={styles.challengeContainer}>
           <TimedModeSetup
             onBack={() => navigateTo('menu')}
+            onOpenRanked={() => {
+              if (accountIdentity === null) {
+                navigateTo('account');
+                return;
+              }
+              navigateTo('ranked');
+            }}
             onStartTimed={(durationSeconds) => {
               setTimedDurationSeconds(durationSeconds);
               navigateTo('timed');
             }}
             onStartUntimed={() => navigateTo('challenge')}
+            rankedStatus={
+              accountRuntime.competitionGateway === null
+                ? 'unavailable'
+                : accountIdentity === null
+                  ? 'sign-in'
+                  : 'available'
+            }
           />
         </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (screen === 'ranked') {
+    const competitionGateway = accountRuntime.competitionGateway;
+    if (accountIdentity === null || competitionGateway === null) {
+      return (
+        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+          <View style={styles.challengeHeader}>
+            <BackButton onPress={() => navigateTo('timed-setup')} />
+          </View>
+          <View style={styles.statusContainer}>
+            <Text style={styles.statusText}>
+              Sign in and reconnect before opening the ranked challenge.
+            </Text>
+          </View>
+        </SafeAreaView>
+      );
+    }
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <RankedDailyChallenge
+          gateway={competitionGateway}
+          key={accountIdentity.userId}
+          onBack={() => navigateTo('timed-setup')}
+          userId={accountIdentity.userId}
+        />
       </SafeAreaView>
     );
   }

@@ -53,7 +53,7 @@ select results_eq(
 
 select is(
   (public.export_account_data('11111111-1111-4111-8111-111111111111')->>'schema_version')::integer,
-  1,
+  2,
   'an owner can export a versioned account-data document'
 );
 
