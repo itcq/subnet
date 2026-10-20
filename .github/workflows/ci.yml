@@ -37,7 +37,20 @@ jobs:
         run: npm run backend:reset
 
       - name: Run pgTAP authorization suite
-        run: npm run backend:test
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run backend:test 2>&1 | tee pgtap.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            while IFS= read -r line; do
+              line=${line//'%'/'%25'}
+              line=${line//$'\r'/'%0D'}
+              line=${line//$'\n'/'%0A'}
+              echo "::error title=pgTAP failure::$line"
+            done < <(grep -E 'not ok|Failed test|ERROR|error:|Tests Failed|Dubious|Looks like you failed' pgtap.log | tail -n 30)
+          fi
+          exit "$status"
 
   verify:
     name: Test, lint, typecheck, doctor, and export
