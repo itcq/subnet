@@ -6,6 +6,10 @@ const migrationPath = path.resolve(
   process.cwd(),
   'supabase/migrations/20261020000002_ranked_daily_challenge.sql',
 );
+const conflictFixMigrationPath = path.resolve(
+  process.cwd(),
+  'supabase/migrations/20261021000003_fix_ranked_daily_round_conflict.sql',
+);
 const pgTapPath = path.resolve(
   process.cwd(),
   'supabase/tests/database/ranked_daily_challenge.test.sql',
@@ -65,6 +69,14 @@ describe('ranked daily challenge database contract', () => {
     expect(sql).toContain('grant execute on function public.submit_ranked_timed_answer(uuid, uuid, text) to authenticated');
     expect(sql).toContain('grant execute on function public.get_ranked_timed_leaderboard(uuid) to authenticated');
     expect(sql).not.toContain('to anon');
+  });
+
+  it('uses the named daily-round constraint to avoid PL/pgSQL output-column ambiguity', () => {
+    const sql = readRequired(conflictFixMigrationPath);
+
+    expect(sql).toContain('create or replace function public.start_ranked_timed_attempt(expected_user_id uuid)');
+    expect(sql).toContain('on conflict on constraint ranked_daily_rounds_pkey do nothing');
+    expect(sql).not.toContain('on conflict (challenge_date)');
   });
 
   it('covers ownership, anonymity, duplicate starts, server scoring, and cascade deletion in pgTAP', () => {
