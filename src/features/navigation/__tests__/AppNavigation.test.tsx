@@ -1,8 +1,19 @@
 import { fireEvent, render } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 
 import { AppNavigation } from '../AppNavigation';
 
 describe('AppNavigation', () => {
+  it('keeps the entire app in a centered mobile-sized column on wide screens', async () => {
+    const view = await render(
+      <AppNavigation activeScreen="menu" onContinue={jest.fn()} onNavigate={jest.fn()} />,
+    );
+
+    expect(StyleSheet.flatten(view.getByTestId('app-shell').props.style)).toEqual(
+      expect.objectContaining({ alignSelf: 'center', maxWidth: 960, width: '100%' }),
+    );
+  });
+
   it('renders the four primary destinations in one shared navigation group', async () => {
     const onContinue = jest.fn();
     const onNavigate = jest.fn();

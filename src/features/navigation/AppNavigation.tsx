@@ -105,7 +105,7 @@ export function AppNavigation({
   onNavigate,
 }: AppNavigationProps) {
   return (
-    <View style={styles.shell}>
+    <View style={styles.shell} testID="app-shell">
       <NavigationGroup
         activeScreen={activeScreen}
         items={primaryItems}
@@ -128,7 +128,13 @@ export function AppNavigation({
 }
 
 const styles = StyleSheet.create({
-  shell: { backgroundColor: '#07111F', flex: 1 },
+  shell: {
+    alignSelf: 'center',
+    backgroundColor: '#07111F',
+    flex: 1,
+    maxWidth: 960,
+    width: '100%',
+  },
   content: { flex: 1, minHeight: 0 },
   navigationGroup: {
     alignItems: 'stretch',
