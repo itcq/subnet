@@ -40,6 +40,8 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
+          # Capture failure before GitHub's bash -e exits the step.
+          set +e
           npm run backend:test 2>&1 | tee pgtap.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
