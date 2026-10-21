@@ -273,6 +273,32 @@ describe('HomeScreen launch and menu flow', () => {
     expect(mockRetry).toHaveBeenCalledTimes(1);
   });
 
+  it('uses shared horizontal primary and secondary navigation across pages', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    expect(screen.getByTestId('primary-navigation')).toBeTruthy();
+    expect(screen.getByTestId('secondary-navigation')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Stats' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'How to Play' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Journey' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
+    expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
+    expect(screen.getByTestId('primary-navigation')).toBeTruthy();
+    expect(screen.getByTestId('secondary-navigation')).toBeTruthy();
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Stats' }));
+    expect(screen.getByRole('header', { name: 'Stats' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Local Rank & Badges' })).toBeTruthy();
+    expect(screen.getByRole('header', { name: 'Global Timed Scoreboard' })).toBeTruthy();
+    expect(screen.getByText(/sign in to view the global daily timed scoreboard/i)).toBeTruthy();
+  });
+
   it('defaults to a focused journey after hydration without exposing the global catalog size', async () => {
     hydrated();
     const screen = await render(<HomeScreen />);
@@ -286,11 +312,11 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByText('● Foundations · Current')).toBeTruthy();
     expect(screen.getByText('🔒 Builder · Locked')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'LEARN SUBNETTING' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'PLAY TIMED MODE' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'LOCAL RANK & BADGES' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'HOW TO PLAY' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'VIEW JOURNEY' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Stats' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'How to Play' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Journey' })).toBeTruthy();
     expect(screen.queryByText(/500/)).toBeNull();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
   });
@@ -310,7 +336,7 @@ describe('HomeScreen launch and menu flow', () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'How to Play' }));
 
     expect(mockBrowserNavigationHost.history.pushState).toHaveBeenCalledWith(
       { page: 'how-to-play' },
@@ -322,25 +348,25 @@ describe('HomeScreen launch and menu flow', () => {
   it('restores the prior page when browser history emits popstate', async () => {
     hydrated();
     const screen = await render(<HomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'How to Play' }));
     expect(screen.getByRole('header', { name: 'How to Play' })).toBeTruthy();
 
     mockBrowserNavigationHost.location.search = '';
     await act(async () => mockPopStateListener?.());
 
     expect(screen.queryByRole('header', { name: 'How to Play' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'HOW TO PLAY' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'How to Play' })).toBeTruthy();
   });
 
   it('opens optional account registration without blocking anonymous play', async () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
-    expect(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
 
     await fireEvent.press(
-      screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }),
+      screen.getByRole('button', { name: 'Account' }),
     );
 
     expect(screen.getByTestId('account-registration')).toBeTruthy();
@@ -360,7 +386,7 @@ describe('HomeScreen launch and menu flow', () => {
     jest.mocked(mockRepository.listCompleted).mockResolvedValue([]);
     const screen = await render(<HomeScreen />);
     await fireEvent.press(
-      screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }),
+      screen.getByRole('button', { name: 'Account' }),
     );
 
     type AccountProps = Readonly<{
@@ -387,7 +413,7 @@ describe('HomeScreen launch and menu flow', () => {
     expect(mockRefresh).not.toHaveBeenCalled();
 
     await act(async () => props.onBack());
-    expect(screen.getByRole('button', { name: 'ACCOUNT: learner@example.com' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Account' })).toBeTruthy();
 
     await act(async () => props.onIdentityChange(null));
     expect(useLocalProgress).toHaveBeenLastCalledWith(mockRepository, JOURNEY_PROGRESS_VERSION);
@@ -412,7 +438,7 @@ describe('HomeScreen launch and menu flow', () => {
       throw new Error('storage unavailable');
     });
     const screen = await render(<HomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account' }));
     type AccountProps = Readonly<{
       onDeleteAccount: null | ((identity: { userId: string; email: string }) => Promise<void>);
       onIdentityChange(identity: { userId: string; email: string } | null): void;
@@ -449,7 +475,7 @@ describe('HomeScreen launch and menu flow', () => {
       signOut,
     };
     const screen = await render(<HomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account' }));
     type AccountProps = Readonly<{
       onDeleteAccount: null | ((identity: { userId: string; email: string }) => Promise<void>);
       onIdentityChange(identity: { userId: string; email: string } | null): void;
@@ -475,7 +501,7 @@ describe('HomeScreen launch and menu flow', () => {
     }));
     jest.mocked(mockAccountRepository.listCompleted).mockResolvedValue([]);
     const screen = await render(<HomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account' }));
 
     type AccountProps = Readonly<{
       onIdentityChange(identity: { userId: string; email: string } | null): void;
@@ -506,7 +532,7 @@ describe('HomeScreen launch and menu flow', () => {
 
     const screen = await render(<HomeScreen />);
     await fireEvent.press(
-      screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }),
+      screen.getByRole('button', { name: 'Account' }),
     );
     const props = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
       onIdentityChange(identity: { userId: string; email: string } | null): void;
@@ -579,7 +605,7 @@ describe('HomeScreen launch and menu flow', () => {
     const screen = await render(<HomeScreen />);
 
     expect(screen.getByRole('button', { name: 'CONTINUE JOURNEY' })).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
 
     expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
     expect(screen.getByText(/Optional and unscored/)).toBeTruthy();
@@ -605,7 +631,7 @@ describe('HomeScreen launch and menu flow', () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'PLAY TIMED MODE' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Play' }));
     expect(screen.getByRole('header', { name: 'Choose Your Play Style' })).toBeTruthy();
     expect(screen.queryByTestId('timed-challenge')).toBeNull();
 
@@ -631,7 +657,7 @@ describe('HomeScreen launch and menu flow', () => {
     expect(mockRecordCompletion).not.toHaveBeenCalled();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
-    await fireEvent.press(screen.getByRole('button', { name: 'LOCAL RANK & BADGES' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Stats' }));
 
     expect(screen.getByRole('header', { name: 'Local Rank & Badges' })).toBeTruthy();
     expect(screen.getByText('700 local points')).toBeTruthy();
@@ -644,7 +670,7 @@ describe('HomeScreen launch and menu flow', () => {
     mockAccountRuntime.competitionGateway = mockCompetitionGateway;
     const screen = await render(<HomeScreen />);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account' }));
     const accountProps = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
       onBack(): void;
       onIdentityChange(identity: { userId: string; email: string } | null): void;
@@ -655,7 +681,7 @@ describe('HomeScreen launch and menu flow', () => {
     }));
     await act(async () => accountProps.onBack());
 
-    await fireEvent.press(screen.getByRole('button', { name: 'PLAY TIMED MODE' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Play' }));
     await fireEvent.press(screen.getByRole('button', { name: 'OPEN DAILY RANKED CHALLENGE' }));
 
     expect(screen.getByTestId('ranked-daily-challenge')).toBeTruthy();
@@ -684,7 +710,7 @@ describe('HomeScreen launch and menu flow', () => {
 
     await fireEvent.press(screen.getByRole('button', { name: 'CONTINUE JOURNEY' }));
     expect(screen.getByTestId('network-challenge')).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'HOW TO PLAY' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'How to Play' })).toBeTruthy();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
     expect(screen.queryByTestId('network-challenge')).toBeNull();
@@ -719,7 +745,7 @@ describe('HomeScreen launch and menu flow', () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'How to Play' }));
     const infoBackPress = mockHardwareBackPress;
 
     await act(async () => {
@@ -727,7 +753,7 @@ describe('HomeScreen launch and menu flow', () => {
     });
 
     expect(screen.queryByRole('header', { name: 'How to Play' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'HOW TO PLAY' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'How to Play' })).toBeTruthy();
     expect(mockHardwareBackPress?.()).toBe(false);
   });
 
@@ -735,7 +761,7 @@ describe('HomeScreen launch and menu flow', () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
     await fireEvent.press(
       screen.getByRole('button', { name: 'Start guided Bits, Bytes and Octets lesson' }),
     );
@@ -747,19 +773,19 @@ describe('HomeScreen launch and menu flow', () => {
 
     expect(screen.queryByRole('header', { name: 'Build an IPv4 Address' })).toBeNull();
     expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'LEARN SUBNETTING' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
 
     await act(async () => {
       expect(mockHardwareBackPress?.()).toBe(true);
     });
-    expect(screen.getByRole('button', { name: 'LEARN SUBNETTING' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
   });
 
   it('returns from Guided Practice to Learn with Android hardware Back', async () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
     await fireEvent.press(screen.getByRole('button', { name: 'Start guided practice' }));
     expect(screen.getByTestId('guided-practice')).toBeTruthy();
 
@@ -769,14 +795,14 @@ describe('HomeScreen launch and menu flow', () => {
 
     expect(screen.queryByTestId('guided-practice')).toBeNull();
     expect(screen.getByRole('header', { name: 'Learn Subnetting' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'LEARN SUBNETTING' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Learn' })).toBeTruthy();
   });
 
   it('roundtrips through practical How to Play instructions', async () => {
     hydrated();
     const screen = await render(<HomeScreen />);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'How to Play' }));
     expect(screen.getByTestId('info-scroll')).toBeTruthy();
     expect(screen.getByRole('header', { name: 'How to Play' })).toBeTruthy();
     expect(screen.getByText('1. Read the network and prefix-length prompt.')).toBeTruthy();
@@ -792,7 +818,7 @@ describe('HomeScreen launch and menu flow', () => {
     ).toBeTruthy();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
-    expect(screen.getByRole('button', { name: 'HOW TO PLAY' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'How to Play' })).toBeTruthy();
   });
 
   it('shows stage states and descriptions in the journey map without ordinal ranges', async () => {
@@ -801,7 +827,7 @@ describe('HomeScreen launch and menu flow', () => {
 
     expect(screen.getByText('Builder')).toBeTruthy();
     expect(screen.getByText('Unit 1 · Lesson 1')).toBeTruthy();
-    await fireEvent.press(screen.getByRole('button', { name: 'VIEW JOURNEY' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Journey' }));
     expect(screen.getByRole('header', { name: 'Your Journey' })).toBeTruthy();
     expect(screen.getByText('✓ Foundations · Complete')).toBeTruthy();
     expect(screen.getByText('● Builder · Current')).toBeTruthy();
@@ -811,7 +837,7 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.queryByText(/500|1–100|101–299|300–399|400–500/)).toBeNull();
 
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
-    expect(screen.getByRole('button', { name: 'VIEW JOURNEY' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Journey' })).toBeTruthy();
   });
 
   it('shows exactly one browser-storage scope notice on every hydrated local screen', async () => {
@@ -822,15 +848,15 @@ describe('HomeScreen launch and menu flow', () => {
 
     expect(screen.getAllByText(WEB_NOTICE)).toHaveLength(1);
 
-    await fireEvent.press(screen.getByRole('button', { name: 'LEARN SUBNETTING' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Learn' }));
     expect(screen.getAllByText(WEB_NOTICE)).toHaveLength(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
 
-    await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'How to Play' }));
     expect(screen.getAllByText(WEB_NOTICE)).toHaveLength(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
 
-    await fireEvent.press(screen.getByRole('button', { name: 'VIEW JOURNEY' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Journey' }));
     expect(screen.getAllByText(WEB_NOTICE)).toHaveLength(1);
     await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
 
@@ -875,7 +901,7 @@ describe('HomeScreen launch and menu flow', () => {
         pendingSync: true,
       }]);
     const screen = await render(<HomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account' }));
     const accountProps = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
       onBack(): void;
       onIdentityChange(identity: { userId: string; email: string } | null): void;
@@ -940,7 +966,7 @@ describe('HomeScreen launch and menu flow', () => {
       }]);
 
     const screen = await render(<HomeScreen />);
-    await fireEvent.press(screen.getByRole('button', { name: 'CREATE OR SIGN IN TO ACCOUNT' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Account' }));
     const accountProps = mockAccountRegistration.mock.calls.at(-1)?.[0] as Readonly<{
       onBack(): void;
       onIdentityChange(identity: { userId: string; email: string } | null): void;

@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -19,9 +20,11 @@ import { AccountRegistration } from '@/features/account/AccountRegistration';
 import { downloadAccountDataExport } from '@/features/account/downloadAccountDataExport';
 import { LocalAchievements } from '@/features/achievements/LocalAchievements';
 import { NetworkChallenge } from '@/features/challenge/NetworkChallenge';
+import { GlobalTimedLeaderboard } from '@/features/competition/GlobalTimedLeaderboard';
 import { RankedDailyChallenge } from '@/features/competition/RankedDailyChallenge';
 import { GuidedPractice } from '@/features/learning/GuidedPractice';
 import { LearnSubnetting } from '@/features/learning/LearnSubnetting';
+import { AppNavigation } from '@/features/navigation/AppNavigation';
 import { TimedChallenge } from '@/features/timed/TimedChallenge';
 import { TimedModeSetup } from '@/features/timed/TimedModeSetup';
 import {
@@ -358,10 +361,23 @@ export default function HomeScreen() {
       : nextQuestion === undefined
         ? 'VIEW COMPLETED JOURNEY'
         : 'CONTINUE JOURNEY';
+  const continueJourney = () => {
+    navigateTo(nextQuestion === undefined ? 'completion' : 'challenge');
+  };
+  const renderPage = (content: ReactNode) => (
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <AppNavigation
+        activeScreen={screen}
+        onContinue={continueJourney}
+        onNavigate={navigateTo}>
+        {content}
+      </AppNavigation>
+    </SafeAreaView>
+  );
 
   if (screen === 'challenge') {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    return renderPage(
+      <>
         <View style={styles.challengeHeader}>
           <BackButton onPress={() => navigateTo('menu')} />
         </View>
@@ -398,21 +414,19 @@ export default function HomeScreen() {
             questions={subnetQuestionCatalog}
           />
         </View>
-      </SafeAreaView>
+      </>
     );
   }
 
   if (screen === 'learning-practice') {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <GuidedPractice onBack={() => navigateTo('learn')} />
-      </SafeAreaView>
+    return renderPage(
+      <GuidedPractice onBack={() => navigateTo('learn')} />,
     );
   }
 
   if (screen === 'timed-setup') {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    return renderPage(
+      <>
         <PersistenceNotice />
         <View style={styles.challengeContainer}>
           <TimedModeSetup
@@ -438,15 +452,15 @@ export default function HomeScreen() {
             }
           />
         </View>
-      </SafeAreaView>
+      </>
     );
   }
 
   if (screen === 'ranked') {
     const competitionGateway = accountRuntime.competitionGateway;
     if (accountIdentity === null || competitionGateway === null) {
-      return (
-        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      return renderPage(
+        <>
           <View style={styles.challengeHeader}>
             <BackButton onPress={() => navigateTo('timed-setup')} />
           </View>
@@ -455,24 +469,24 @@ export default function HomeScreen() {
               Sign in and reconnect before opening the ranked challenge.
             </Text>
           </View>
-        </SafeAreaView>
+        </>
       );
     }
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    return renderPage(
+      <>
         <RankedDailyChallenge
           gateway={competitionGateway}
           key={accountIdentity.userId}
           onBack={() => navigateTo('timed-setup')}
           userId={accountIdentity.userId}
         />
-      </SafeAreaView>
+      </>
     );
   }
 
   if (screen === 'timed') {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    return renderPage(
+      <>
         <View style={styles.challengeHeader}>
           <BackButton onPress={() => navigateTo('menu')} />
         </View>
@@ -486,14 +500,14 @@ export default function HomeScreen() {
             question={subnetQuestionCatalog[0]}
           />
         </View>
-      </SafeAreaView>
+      </>
     );
   }
 
   if (screen === 'account') {
     const accountDataService = accountRuntime.dataService;
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    return renderPage(
+      <>
         <AccountRegistration
           key={accountIdentity?.userId ?? 'anonymous-account'}
           onBack={() => navigateTo('menu')}
@@ -537,32 +551,50 @@ export default function HomeScreen() {
           privacyNoticeUrl={accountRuntime.privacyNoticeUrl}
           service={accountRuntime.service}
         />
-      </SafeAreaView>
+      </>
     );
   }
 
   if (screen === 'achievements') {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <ScrollView
-          ref={localScreenScrollRef}
-          key="achievements"
-          contentContainerStyle={styles.infoScrollContent}
-          onContentSizeChange={resetLocalScroll}
-          testID="info-scroll">
-          <PersistenceNotice />
-          <View style={styles.infoContainer}>
-            <BackButton onPress={() => navigateTo('menu')} />
-            <LocalAchievements results={timedResults} />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+    const competitionGateway = accountRuntime.competitionGateway;
+    return renderPage(
+      <ScrollView
+        ref={localScreenScrollRef}
+        key="achievements"
+        contentContainerStyle={styles.infoScrollContent}
+        onContentSizeChange={resetLocalScroll}
+        testID="info-scroll">
+        <PersistenceNotice />
+        <View style={styles.infoContainer}>
+          <Text accessibilityRole="header" style={styles.infoTitle}>Stats</Text>
+          <LocalAchievements results={timedResults} />
+          {accountIdentity !== null && competitionGateway !== null ? (
+            <GlobalTimedLeaderboard
+              gateway={competitionGateway}
+              key={accountIdentity.userId}
+              userId={accountIdentity.userId}
+            />
+          ) : (
+            <View style={styles.globalScoreboardSection}>
+              <Text accessibilityRole="header" style={styles.infoTitle}>
+                Global Timed Scoreboard
+              </Text>
+              <View style={styles.infoCard}>
+                <Text style={styles.infoText}>
+                  Sign in to view the global daily timed scoreboard. Rankings use generated Subnetter aliases; names and emails are never shown.
+                </Text>
+                <MenuButton label="OPEN ACCOUNT" onPress={() => navigateTo('account')} />
+              </View>
+            </View>
+          )}
+        </View>
+      </ScrollView>,
     );
   }
 
   if (screen === 'learn') {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    return renderPage(
+      <>
         <PersistenceNotice />
         <View style={styles.challengeContainer}>
           <LearnSubnetting
@@ -572,14 +604,13 @@ export default function HomeScreen() {
             onStartPractice={() => navigateTo('learning-practice')}
           />
         </View>
-      </SafeAreaView>
+      </>
     );
   }
 
   if (screen === 'completion') {
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <ScrollView
+    return renderPage(
+      <ScrollView
           ref={localScreenScrollRef}
           key="completion"
           contentContainerStyle={styles.infoScrollContent}
@@ -597,16 +628,14 @@ export default function HomeScreen() {
               <Text style={styles.infoText}>Your completed path remains saved for future practice features.</Text>
             </View>
           </View>
-        </ScrollView>
-      </SafeAreaView>
+        </ScrollView>,
     );
   }
 
   if (screen === 'how-to-play' || screen === 'journey') {
     const isHowToPlay = screen === 'how-to-play';
-    return (
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <ScrollView
+    return renderPage(
+      <ScrollView
           ref={localScreenScrollRef}
           key={screen}
           contentContainerStyle={styles.infoScrollContent}
@@ -646,14 +675,12 @@ export default function HomeScreen() {
               </>
             )}
           </View>
-        </ScrollView>
-      </SafeAreaView>
+        </ScrollView>,
     );
   }
 
-  return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-      <ScrollView
+  return renderPage(
+    <ScrollView
         ref={localScreenScrollRef}
         key="menu"
         contentContainerStyle={styles.menuScrollContent}
@@ -686,19 +713,8 @@ export default function HomeScreen() {
           <View style={styles.menuActions}>
             <MenuButton
               label={primaryLabel}
-              onPress={() => navigateTo(nextQuestion === undefined ? 'completion' : 'challenge')}
+              onPress={continueJourney}
               primary
-            />
-            <MenuButton label="LEARN SUBNETTING" onPress={() => navigateTo('learn')} />
-            <MenuButton label="PLAY TIMED MODE" onPress={() => navigateTo('timed-setup')} />
-            <MenuButton label="LOCAL RANK & BADGES" onPress={() => navigateTo('achievements')} />
-            <MenuButton label="HOW TO PLAY" onPress={() => navigateTo('how-to-play')} />
-            <MenuButton label="VIEW JOURNEY" onPress={() => navigateTo('journey')} />
-            <MenuButton
-              label={accountIdentity === null
-                ? 'CREATE OR SIGN IN TO ACCOUNT'
-                : `ACCOUNT: ${accountIdentity.email}`}
-              onPress={() => navigateTo('account')}
             />
           </View>
           <StagePath nextOrdinal={nextQuestion?.ordinal} />
@@ -706,8 +722,7 @@ export default function HomeScreen() {
             Learn at your pace. The Journey stays untimed, with no lives or streak penalties.
           </Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+      </ScrollView>,
   );
 }
 
@@ -850,6 +865,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   infoTitle: { color: '#F5F8FB', fontSize: 30, fontWeight: '900', lineHeight: 38, marginTop: 28 },
+  globalScoreboardSection: { gap: 14, marginTop: 8 },
   infoCard: {
     backgroundColor: '#0D1C2C',
     borderColor: '#27425E',

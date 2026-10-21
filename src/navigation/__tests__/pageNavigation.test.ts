@@ -16,6 +16,7 @@ describe('page navigation URLs', () => {
     ['?page=learn-practice', 'learning-practice'],
     ['?page=timed', 'timed-setup'],
     ['?page=ranked', 'ranked'],
+    ['?page=stats', 'achievements'],
     ['?page=achievements', 'achievements'],
     ['?page=how-to-play', 'how-to-play'],
     ['?page=journey', 'journey'],
@@ -44,6 +45,7 @@ describe('page navigation URLs', () => {
 
   it('builds links under the deployed base path and returns home without a query', () => {
     expect(buildPageHref('/subnet/', 'ranked', 120)).toBe('/subnet/?page=ranked');
+    expect(buildPageHref('/subnet/', 'achievements', 120)).toBe('/subnet/?page=stats');
     expect(buildPageHref('/subnet/', 'timed', 240)).toBe(
       '/subnet/?page=timed-challenge&duration=240',
     );
