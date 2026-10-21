@@ -29,6 +29,15 @@ const mockAccountRegistration = jest.fn((_props: unknown) => null);
 
 const mockBackHandlerRemove = jest.fn();
 let mockHardwareBackPress: (() => boolean | null | undefined) | undefined;
+let mockPopStateListener: (() => void) | undefined;
+const mockBrowserNavigationHost = {
+  location: { pathname: '/subnet/', search: '' },
+  history: { pushState: jest.fn() },
+  addEventListener: jest.fn((_event: 'popstate', listener: () => void) => {
+    mockPopStateListener = listener;
+  }),
+  removeEventListener: jest.fn(),
+};
 const mockRuntime = {
   repository: mockRepository,
   durable: true,
@@ -80,6 +89,14 @@ jest.mock('@/progress/createProgressRepository', () => ({
 jest.mock('@/progress/useLocalProgress', () => ({
   useLocalProgress: jest.fn(() => mockProgressState),
 }));
+
+jest.mock('@/navigation/pageNavigation', () => {
+  const actual = jest.requireActual('@/navigation/pageNavigation');
+  return {
+    ...actual,
+    getBrowserNavigationHost: jest.fn(() => mockBrowserNavigationHost),
+  };
+});
 
 jest.mock('@/features/challenge/NetworkChallenge', () => {
   const ReactModule = require('react');
@@ -202,6 +219,12 @@ describe('HomeScreen launch and menu flow', () => {
     jest.mocked(mockAccountRepository.recordCompletion).mockReset().mockResolvedValue(undefined);
     mockBackHandlerRemove.mockClear();
     mockHardwareBackPress = undefined;
+    mockPopStateListener = undefined;
+    mockBrowserNavigationHost.location.pathname = '/subnet/';
+    mockBrowserNavigationHost.location.search = '';
+    mockBrowserNavigationHost.history.pushState.mockClear();
+    mockBrowserNavigationHost.addEventListener.mockClear();
+    mockBrowserNavigationHost.removeEventListener.mockClear();
     jest.mocked(BackHandler.addEventListener).mockClear();
     jest.mocked(useLocalProgress).mockClear();
     jest.mocked(createAccountProgressRepository).mockClear();
@@ -270,6 +293,43 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByRole('button', { name: 'VIEW JOURNEY' })).toBeTruthy();
     expect(screen.queryByText(/500/)).toBeNull();
     expect(screen.queryByTestId('network-challenge')).toBeNull();
+  });
+
+  it('opens a directly linked page after hydration', async () => {
+    hydrated();
+    mockBrowserNavigationHost.location.search = '?page=timed';
+
+    const screen = await render(<HomeScreen />);
+    await act(async () => undefined);
+
+    expect(screen.getByRole('header', { name: 'Choose Your Play Style' })).toBeTruthy();
+    expect(screen.queryByTestId('main-menu-scroll')).toBeNull();
+  });
+
+  it('updates the browser URL when navigating from the menu', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
+
+    expect(mockBrowserNavigationHost.history.pushState).toHaveBeenCalledWith(
+      { page: 'how-to-play' },
+      '',
+      '/subnet/?page=how-to-play',
+    );
+  });
+
+  it('restores the prior page when browser history emits popstate', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+    await fireEvent.press(screen.getByRole('button', { name: 'HOW TO PLAY' }));
+    expect(screen.getByRole('header', { name: 'How to Play' })).toBeTruthy();
+
+    mockBrowserNavigationHost.location.search = '';
+    await act(async () => mockPopStateListener?.());
+
+    expect(screen.queryByRole('header', { name: 'How to Play' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'HOW TO PLAY' })).toBeTruthy();
   });
 
   it('opens optional account registration without blocking anonymous play', async () => {

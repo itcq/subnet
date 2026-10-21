@@ -24,6 +24,13 @@ import { GuidedPractice } from '@/features/learning/GuidedPractice';
 import { LearnSubnetting } from '@/features/learning/LearnSubnetting';
 import { TimedChallenge } from '@/features/timed/TimedChallenge';
 import { TimedModeSetup } from '@/features/timed/TimedModeSetup';
+import {
+  getBrowserNavigationHost,
+  pushBrowserPage,
+  readBrowserPage,
+  subscribeToBrowserPages,
+  type PageScreen,
+} from '@/navigation/pageNavigation';
 import { AccountProgressSync } from '@/progress/accountProgressSync';
 import {
   clearAccountProgressRepository,
@@ -45,19 +52,7 @@ function resolveJourneyQuestionId(ordinal: number): string {
   return question.id;
 }
 
-type Screen =
-  | 'menu'
-  | 'account'
-  | 'challenge'
-  | 'learning-practice'
-  | 'timed-setup'
-  | 'timed'
-  | 'ranked'
-  | 'achievements'
-  | 'learn'
-  | 'how-to-play'
-  | 'journey'
-  | 'completion';
+type Screen = PageScreen;
 
 function LaunchIdentity() {
   return (
@@ -221,11 +216,24 @@ export default function HomeScreen() {
   const [guidedLessonOpen, setGuidedLessonOpen] = useState(false);
   const [timedResults, setTimedResults] = useState<readonly LocalTimedResult[]>([]);
   const [timedDurationSeconds, setTimedDurationSeconds] = useState<120 | 240>(120);
+  const browserNavigationHost = useMemo(() => getBrowserNavigationHost(), []);
   const localScreenScrollRef = useRef<ScrollView>(null);
 
   const resetLocalScroll = useCallback(() => {
     localScreenScrollRef.current?.scrollTo({ animated: false, y: 0 });
   }, []);
+
+  useEffect(() => {
+    if (browserNavigationHost === null) return;
+    const applyPage = (page: ReturnType<typeof readBrowserPage>) => {
+      resetLocalScroll();
+      setGuidedLessonOpen(false);
+      setTimedDurationSeconds(page.timedDurationSeconds);
+      setScreen(page.screen);
+    };
+    applyPage(readBrowserPage(browserNavigationHost));
+    return subscribeToBrowserPages(browserNavigationHost, applyPage);
+  }, [browserNavigationHost, resetLocalScroll]);
 
   useEffect(() => {
     let active = true;
@@ -257,12 +265,18 @@ export default function HomeScreen() {
     };
   }, [handleAccountIdentityChange]);
 
-  const navigateTo = (nextScreen: Screen) => {
+  const navigateTo = (
+    nextScreen: Screen,
+    nextTimedDurationSeconds: 120 | 240 = timedDurationSeconds,
+  ) => {
     resetLocalScroll();
     if (nextScreen !== 'learn') {
       setGuidedLessonOpen(false);
     }
     setScreen(nextScreen);
+    if (browserNavigationHost !== null) {
+      pushBrowserPage(browserNavigationHost, nextScreen, nextTimedDurationSeconds);
+    }
   };
 
   useEffect(() => {
@@ -412,7 +426,7 @@ export default function HomeScreen() {
             }}
             onStartTimed={(durationSeconds) => {
               setTimedDurationSeconds(durationSeconds);
-              navigateTo('timed');
+              navigateTo('timed', durationSeconds);
             }}
             onStartUntimed={() => navigateTo('challenge')}
             rankedStatus={
