@@ -219,6 +219,9 @@ export default function HomeScreen() {
   const [guidedLessonOpen, setGuidedLessonOpen] = useState(false);
   const [timedResults, setTimedResults] = useState<readonly LocalTimedResult[]>([]);
   const [timedDurationSeconds, setTimedDurationSeconds] = useState<120 | 240>(120);
+  const [timedQuestionIndex, setTimedQuestionIndex] = useState(() =>
+    Math.floor(Math.random() * subnetQuestionCatalog.length),
+  );
   const browserNavigationHost = useMemo(() => getBrowserNavigationHost(), []);
   const localScreenScrollRef = useRef<ScrollView>(null);
 
@@ -440,6 +443,9 @@ export default function HomeScreen() {
             }}
             onStartTimed={(durationSeconds) => {
               setTimedDurationSeconds(durationSeconds);
+              setTimedQuestionIndex((current) =>
+                (current + 1) % subnetQuestionCatalog.length,
+              );
               navigateTo('timed', durationSeconds);
             }}
             onStartUntimed={() => navigateTo('challenge')}
@@ -493,11 +499,12 @@ export default function HomeScreen() {
         <PersistenceNotice />
         <View style={styles.challengeContainer}>
           <TimedChallenge
+            key={subnetQuestionCatalog[timedQuestionIndex].id}
             durationSeconds={timedDurationSeconds}
             onCompleted={(result) => {
               setTimedResults((current) => [...current, result]);
             }}
-            question={subnetQuestionCatalog[0]}
+            question={subnetQuestionCatalog[timedQuestionIndex]}
           />
         </View>
       </>

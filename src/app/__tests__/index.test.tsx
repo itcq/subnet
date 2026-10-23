@@ -664,6 +664,26 @@ describe('HomeScreen launch and menu flow', () => {
     expect(screen.getByText('Persistent Solver')).toBeTruthy();
   });
 
+  it('uses a different catalog question for consecutive timed-practice starts', async () => {
+    hydrated();
+    const screen = await render(<HomeScreen />);
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Play' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'START 2-MINUTE MODE' }));
+    const firstProps = mockTimedChallenge.mock.calls.at(-1)?.[0] as {
+      question: SubnetQuestion;
+    };
+
+    await fireEvent.press(screen.getByRole('button', { name: 'Back to main menu' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'Play' }));
+    await fireEvent.press(screen.getByRole('button', { name: 'START 2-MINUTE MODE' }));
+    const secondProps = mockTimedChallenge.mock.calls.at(-1)?.[0] as {
+      question: SubnetQuestion;
+    };
+
+    expect(secondProps.question.id).not.toBe(firstProps.question.id);
+  });
+
   it('opens the signed-in daily ranked challenge with the active account identity', async () => {
     hydrated();
     mockAccountRuntime.configured = true;
